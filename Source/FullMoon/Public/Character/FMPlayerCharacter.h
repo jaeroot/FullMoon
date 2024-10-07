@@ -6,6 +6,9 @@
 #include "Character/FMPlayerCharacterBase.h"
 #include "FMPlayerCharacter.generated.h"
 
+class IFMInteractionInterface;
+class UFMInventoryComponent;
+
 UCLASS()
 class FULLMOON_API AFMPlayerCharacter : public AFMPlayerCharacterBase
 {
@@ -19,6 +22,7 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
+	virtual void Tick(float DeltaSeconds) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
@@ -54,5 +58,25 @@ protected:
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Animation)
 	TArray<TObjectPtr<UClass>> LinkedAnimLayers;
+
+// Inventory Component
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UFMInventoryComponent> InventoryComponent;
+
+// Interaction
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Interact)
+	uint8 bInteract : 1;
+
+	IFMInteractionInterface* FocusedInteractionActor;
+
+	void TraceForward();
+
+	UFUNCTION(Server, Reliable)
+	void ServerInteraction();
+
+	
+
 	
 };

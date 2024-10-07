@@ -5,9 +5,13 @@
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Camera/CameraComponent.h"
 #include "GameData/FMGameSingleton.h"
 #include "GameData/FMHeroData.h"
 #include "Input/FMInputData.h"
+#include "Interface/FMInteractionInterface.h"
+#include "Inventory/FMInventoryComponent.h"
+#include "Physics/FMCollision.h"
 
 AFMPlayerCharacter::AFMPlayerCharacter()
 {
@@ -17,6 +21,12 @@ AFMPlayerCharacter::AFMPlayerCharacter()
 	ChildMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ChildMesh->bReceivesDecals = false;
 
+	// Set Inventory
+	InventoryComponent = CreateDefaultSubobject<UFMInventoryComponent>(TEXT("Inventory"));
+
+	// Set Interaction
+	bInteract = true;
+	
 }
 
 void AFMPlayerCharacter::PostInitializeComponents()
@@ -62,6 +72,16 @@ void AFMPlayerCharacter::BeginPlay()
 		PlayerController->SetInputMode(InputModeGameOnly);
 	}
 
+}
+
+void AFMPlayerCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	if (bInteract && IsLocallyControlled())
+	{
+		TraceForward();
+	}
 }
 
 void AFMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -151,4 +171,62 @@ void AFMPlayerCharacter::NoEquip()
 
 void AFMPlayerCharacter::Interaction()
 {
+	if (bInteract)
+	{
+		ServerInteraction();
+	}
+}
+
+void AFMPlayerCharacter::TraceForward()
+{
+	FHitResult HitResult;
+	FVector Start = CameraComponent->GetComponentLocation();
+	FVector End = Start + CameraComponent->GetForwardVector() * 500;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+	
+	bool bHitResult = GetWorld()->LineTraceSingleByChannel(
+		HitResult,
+		Start,
+		End,
+		FM_CCHANNEL_INTERACTION,
+		Params
+	);
+
+	if (bHitResult)
+	{
+		IFMInteractionInterface* HitActor = Cast<IFMInteractionInterface>(HitResult.GetActor());
+		if (HitActor != nullptr)
+		{
+			FocusedInteractionActor = HitActor;
+		}
+		else
+		{
+			FocusedInteractionActor = nullptr;
+		}
+	}
+
+	#if ENABLE_DRAW_DEBUG
+		FColor Color = bHitResult ? FColor::Green : FColor::Red;
+		DrawDebugLine(
+			GetWorld(),
+			Start,
+			End,
+			Color,
+			false,
+			2.0f
+		);
+	#endif
+}
+
+void AFMPlayerCharacter::ServerInteraction_Implementation()
+{
+	TraceForward();
+
+	if (FocusedInteractionActor != nullptr)
+	{
+		FocusedInteractionActor->Interaction(this);
+
+		UE_LOG(LogFMCharacter, Warning, TEXT("%s"), *Cast<AActor>(FocusedInteractionActor)->GetName());
+	}
 }

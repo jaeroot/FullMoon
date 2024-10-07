@@ -13,6 +13,8 @@
 #include "Input/FMInputData.h"
 #include "Kismet/KismetMathLibrary.h"
 
+DEFINE_LOG_CATEGORY(LogFMCharacter);
+
 AFMPlayerCharacterBase::AFMPlayerCharacterBase()
 {
 	// Set Capsule Component
