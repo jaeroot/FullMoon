@@ -8,7 +8,22 @@ public class FullMoon : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput" });
+		PublicDependencyModuleNames.AddRange(new string[]
+		{
+			"Core", 
+			"CoreUObject", 
+			"Engine", 
+			"InputCore", 
+			"EnhancedInput",
+			"Slate",
+			"SlateCore",
+			"UMG",
+			"NavigationSystem",
+			"AIModule",
+			"GameplayTasks",
+			"AnimGraphRuntime",
+			"Niagara"
+		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
