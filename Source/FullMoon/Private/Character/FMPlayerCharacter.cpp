@@ -6,12 +6,15 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
+#include "Combat/FMCombatComponent.h"
 #include "GameData/FMGameSingleton.h"
 #include "GameData/FMHeroData.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Input/FMInputData.h"
 #include "Interface/FMInteractionInterface.h"
 #include "Inventory/FMInventoryComponent.h"
 #include "Physics/FMCollision.h"
+#include "Stat/FMStatComponent.h"
 
 AFMPlayerCharacter::AFMPlayerCharacter()
 {
@@ -21,12 +24,20 @@ AFMPlayerCharacter::AFMPlayerCharacter()
 	ChildMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ChildMesh->bReceivesDecals = false;
 
+	// Set Movement Component
+	GetCharacterMovement()->MaxWalkSpeed = WalkMaxSpeed;
+
 	// Set Inventory
 	InventoryComponent = CreateDefaultSubobject<UFMInventoryComponent>(TEXT("Inventory"));
 
 	// Set Interaction
 	bInteract = true;
-	
+
+	// Stat Component
+	StatComponent = CreateDefaultSubobject<UFMStatComponent>(TEXT("Stat"));
+
+	// Combat Component
+	CombatComponent = CreateDefaultSubobject<UFMCombatComponent>(TEXT("Combat"));
 }
 
 void AFMPlayerCharacter::PostInitializeComponents()
@@ -34,13 +45,7 @@ void AFMPlayerCharacter::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	// Set Child Skeletal Mesh
-	FFMHeroData HeroData = UFMGameSingleton::Get().GetHeroData(TEXT("UE5Manny"));
-	if (HeroData.HeroMesh.IsPending())
-	{
-		HeroData.HeroMesh.LoadSynchronous();
-	}
-	GetChildMesh()->SetSkeletalMesh(HeroData.HeroMesh.Get());
-	GetChildMesh()->SetAnimClass(HeroData.HeroAnim);
+	SetChildMesh(TEXT("UE5Manny"));
 
 	// Set Parent Skeletal Mesh
 	GetMesh()->SetVisibility(false);
@@ -127,10 +132,16 @@ void AFMPlayerCharacter::ToggleSetting()
 
 void AFMPlayerCharacter::SprintStart()
 {
+	GetCharacterMovement()->MaxWalkSpeed = SprintMaxSpeed;
+
+	ServerSprintStart();
 }
 
 void AFMPlayerCharacter::SprintStop()
 {
+	GetCharacterMovement()->MaxWalkSpeed = WalkMaxSpeed;
+
+	ServerSprintStop();
 }
 
 void AFMPlayerCharacter::Dash()
@@ -177,6 +188,27 @@ void AFMPlayerCharacter::Interaction()
 	}
 }
 
+void AFMPlayerCharacter::ServerSprintStart_Implementation()
+{
+	GetCharacterMovement()->MaxWalkSpeed = SprintMaxSpeed;
+}
+
+void AFMPlayerCharacter::ServerSprintStop_Implementation()
+{
+	GetCharacterMovement()->MaxWalkSpeed = WalkMaxSpeed;
+}
+
+void AFMPlayerCharacter::SetChildMesh(const FName& Name)
+{
+	FFMHeroData HeroData = UFMGameSingleton::Get().GetHeroData(Name);
+	if (HeroData.HeroMesh.IsPending())
+	{
+		HeroData.HeroMesh.LoadSynchronous();
+	}
+	GetChildMesh()->SetSkeletalMesh(HeroData.HeroMesh.Get());
+	GetChildMesh()->SetAnimClass(HeroData.HeroAnim);
+}
+
 void AFMPlayerCharacter::TraceForward()
 {
 	FHitResult HitResult;
@@ -206,17 +238,17 @@ void AFMPlayerCharacter::TraceForward()
 		}
 	}
 
-	#if ENABLE_DRAW_DEBUG
-		FColor Color = bHitResult ? FColor::Green : FColor::Red;
-		DrawDebugLine(
-			GetWorld(),
-			Start,
-			End,
-			Color,
-			false,
-			2.0f
-		);
-	#endif
+	// #if ENABLE_DRAW_DEBUG
+	// 	FColor Color = bHitResult ? FColor::Green : FColor::Red;
+	// 	DrawDebugLine(
+	// 		GetWorld(),
+	// 		Start,
+	// 		End,
+	// 		Color,
+	// 		false,
+	// 		2.0f
+	// 	);
+	// #endif
 }
 
 void AFMPlayerCharacter::ServerInteraction_Implementation()

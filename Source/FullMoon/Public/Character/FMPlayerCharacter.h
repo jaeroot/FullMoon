@@ -6,6 +6,8 @@
 #include "Character/FMPlayerCharacterBase.h"
 #include "FMPlayerCharacter.generated.h"
 
+class UFMCombatComponent;
+class UFMStatComponent;
 class IFMInteractionInterface;
 class UFMInventoryComponent;
 
@@ -26,7 +28,7 @@ public:
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
-
+	
 // Input Actions
 protected:
 	// Menu Input Action Functions
@@ -47,12 +49,25 @@ protected:
 	void NoEquip();
 	void Interaction();
 
+// Movement
+protected:
+	const float WalkMaxSpeed = 600.0f;
+	const float SprintMaxSpeed = 900.0f;
+	
+	UFUNCTION(Server, Reliable)
+	void ServerSprintStart();
+
+	UFUNCTION(Server, Reliable)
+	void ServerSprintStop();
+	
 // Child Mesh
 public:
 	FORCEINLINE USkeletalMeshComponent* GetChildMesh() const { return ChildMesh; }
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Mesh)
 	TObjectPtr<USkeletalMeshComponent> ChildMesh;
+
+	void SetChildMesh(const FName& Name);
 	
 // Linked Anim Layers
 protected:
@@ -61,7 +76,7 @@ protected:
 
 // Inventory Component
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Inventory)
 	TObjectPtr<UFMInventoryComponent> InventoryComponent;
 
 // Interaction
@@ -76,7 +91,14 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void ServerInteraction();
 
-	
+// Stat Component
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat)
+	TObjectPtr<UFMStatComponent> StatComponent;
 
+// Combat Component
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat)
+	TObjectPtr<UFMCombatComponent> CombatComponent;
 	
 };
