@@ -9,6 +9,7 @@ AFMMainWeapon::AFMMainWeapon()
 
 void AFMMainWeapon::Attack()
 {
+
 }
 
 void AFMMainWeapon::SpecialSkill()
