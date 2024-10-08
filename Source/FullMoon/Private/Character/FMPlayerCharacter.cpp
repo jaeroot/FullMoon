@@ -7,12 +7,16 @@
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "Combat/FMCombatComponent.h"
+#include "Engine/SkeletalMeshSocket.h"
 #include "GameData/FMGameSingleton.h"
 #include "GameData/FMHeroData.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Input/FMInputData.h"
 #include "Interface/FMInteractionInterface.h"
 #include "Inventory/FMInventoryComponent.h"
+#include "Item/FMMainWeapon.h"
+#include "Item/FMPickup.h"
+#include "ItemData/FMMainWeaponDataAsset.h"
 #include "Physics/FMCollision.h"
 #include "Stat/FMStatComponent.h"
 
@@ -228,37 +232,81 @@ void AFMPlayerCharacter::TraceForward()
 	if (bHitResult)
 	{
 		IFMInteractionInterface* HitActor = Cast<IFMInteractionInterface>(HitResult.GetActor());
-		if (HitActor != nullptr)
-		{
-			FocusedInteractionActor = HitActor;
-		}
-		else
-		{
-			FocusedInteractionActor = nullptr;
-		}
+		FocusedInteractionActor = HitActor;
+	}
+	else
+	{
+		FocusedInteractionActor = nullptr;
 	}
 
-	// #if ENABLE_DRAW_DEBUG
-	// 	FColor Color = bHitResult ? FColor::Green : FColor::Red;
-	// 	DrawDebugLine(
-	// 		GetWorld(),
-	// 		Start,
-	// 		End,
-	// 		Color,
-	// 		false,
-	// 		2.0f
-	// 	);
-	// #endif
+	#if ENABLE_DRAW_DEBUG
+		FColor Color = bHitResult ? FColor::Green : FColor::Red;
+		DrawDebugLine(
+			GetWorld(),
+			Start,
+			End,
+			Color,
+			false,
+			2.0f
+		);
+	#endif
 }
 
 void AFMPlayerCharacter::ServerInteraction_Implementation()
 {
 	TraceForward();
 
-	if (FocusedInteractionActor != nullptr)
+	if (FocusedInteractionActor)
 	{
 		FocusedInteractionActor->Interaction(this);
 
 		UE_LOG(LogFMCharacter, Warning, TEXT("%s"), *Cast<AActor>(FocusedInteractionActor)->GetName());
+	}
+}
+
+void AFMPlayerCharacter::TakeItem(AFMPickup* Item)
+{
+	if (IsValid(Item))
+	{
+		UFMPickupDataAsset* PickupData = Cast<UFMPickupDataAsset>(Item->GetItemData());
+		check(PickupData);
+		
+		int32 Result = InventoryComponent->AddInventoryItem(PickupData, Item->GetCurrentCount());
+
+		if (Result == 0)
+		{
+			Item->Destroy();
+		}
+		else
+		{
+			Item->SetItemCount(Result);
+		}
+	}
+}
+
+void AFMPlayerCharacter::TakeWeapon(AFMWeapon* Weapon)
+{
+	if (!IsValid(Weapon))
+	{
+		return;
+	}
+
+	AFMMainWeapon* MainWeapon = Cast<AFMMainWeapon>(Weapon);
+	if (MainWeapon)
+	{
+		AFMMainWeapon* OldWeapon = CombatComponent->GetWeapon();
+		if (OldWeapon)
+		{
+			OldWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+			OldWeapon->SetEnableCollision(true);
+		}
+		
+		CombatComponent->SetWeapon(MainWeapon);
+
+		UFMMainWeaponDataAsset* MainWeaponData = Cast<UFMMainWeaponDataAsset>(MainWeapon->GetItemData());
+		check(MainWeaponData);
+		
+		MainWeapon->SetEnableCollision(false);
+		MainWeapon->AttachToComponent(GetChildMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, MainWeaponData->WeaponSocket);
 	}
 }

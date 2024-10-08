@@ -21,7 +21,7 @@ void UFMInventoryComponent::GetLifetimeReplicatedProps(TArray<class FLifetimePro
 	DOREPLIFETIME_CONDITION(UFMInventoryComponent, Inventory, COND_OwnerOnly);
 }
 
-int32 UFMInventoryComponent::AddInventoryItem(UFMItemBaseDataAsset* NewItemData, int32 NewItemCount)
+int32 UFMInventoryComponent::AddInventoryItem(UFMPickupDataAsset* NewItemData, int32 NewItemCount)
 {
 	for (auto& Item : Inventory)
 	{

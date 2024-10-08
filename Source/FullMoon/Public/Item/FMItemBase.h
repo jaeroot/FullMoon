@@ -19,27 +19,14 @@ public:
 	AFMItemBase();
 
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
-
+	
 public:
 	void SetItem(const FName& Name);
-
-	FORCEINLINE int32 GetCurrentCount() const { return CurrentCount; }
-	FORCEINLINE void SetItemCount(int32 NewItemCount) { CurrentCount = NewItemCount; }
 	
 	FORCEINLINE UFMItemBaseDataAsset* GetItemData() const { return ItemData; }
 
-protected:
-	UPROPERTY(ReplicatedUsing = OnRep_CurrentCount, EditAnywhere, Category = Item)
-	int32 CurrentCount = 1;
-
-	UFUNCTION()
-	void OnRep_CurrentCount();
-
 // Item Mesh
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Item)
-	TObjectPtr<UCapsuleComponent> Capsule;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Item)
 	TObjectPtr<UStaticMeshComponent> Mesh;
 
@@ -51,4 +38,14 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Item)
 	TObjectPtr<UFMItemBaseDataAsset> ItemData;
 
+// Collision
+public:
+	void SetEnableCollision(bool NewEnableCollision);
+	
+protected:
+	UPROPERTY(ReplicatedUsing = OnRep_EnableCollision, VisibleAnywhere, BlueprintReadOnly, Category = Collision)
+	uint8 bEnableCollision : 1;
+
+	UFUNCTION()
+	void OnRep_EnableCollision();
 };

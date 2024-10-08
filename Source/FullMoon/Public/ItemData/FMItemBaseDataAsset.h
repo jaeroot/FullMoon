@@ -29,9 +29,6 @@ public:
 	FString ItemDescription;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Item)
-	int32 MaxCount;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Item)
 	int32 PurchasePrice;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Item)

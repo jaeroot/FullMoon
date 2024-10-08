@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Character/FMPlayerCharacterBase.h"
+#include "Interface/FMTakeItemInterface.h"
+#include "Interface/FMTakeWeaponInterface.h"
 #include "FMPlayerCharacter.generated.h"
 
 class UFMCombatComponent;
@@ -12,7 +14,7 @@ class IFMInteractionInterface;
 class UFMInventoryComponent;
 
 UCLASS()
-class FULLMOON_API AFMPlayerCharacter : public AFMPlayerCharacterBase
+class FULLMOON_API AFMPlayerCharacter : public AFMPlayerCharacterBase, public IFMTakeItemInterface, public  IFMTakeWeaponInterface
 {
 	GENERATED_BODY()
 
@@ -90,6 +92,9 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void ServerInteraction();
+
+	virtual void TakeItem(class AFMPickup* Item) override;
+	virtual void TakeWeapon(class AFMWeapon* Weapon) override;
 
 // Stat Component
 protected:

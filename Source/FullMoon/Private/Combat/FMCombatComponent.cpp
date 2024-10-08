@@ -3,9 +3,12 @@
 
 #include "Combat/FMCombatComponent.h"
 
+#include "Item/FMMainWeapon.h"
+#include "Net/UnrealNetwork.h"
+
 UFMCombatComponent::UFMCombatComponent()
 {
-	
+	SetIsReplicatedByDefault(true);
 }
 
 
@@ -16,3 +19,14 @@ void UFMCombatComponent::BeginPlay()
 	
 }
 
+void UFMCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UFMCombatComponent, Weapon);
+}
+
+void UFMCombatComponent::OnRep_Weapon()
+{
+	
+}

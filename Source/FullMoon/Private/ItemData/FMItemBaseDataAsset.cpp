@@ -4,7 +4,7 @@
 #include "ItemData/FMItemBaseDataAsset.h"
 
 UFMItemBaseDataAsset::UFMItemBaseDataAsset()
-	: MaxCount(0), PurchasePrice(0), SellingPrice(0)
+	: PurchasePrice(0), SellingPrice(0)
 {
 }
 

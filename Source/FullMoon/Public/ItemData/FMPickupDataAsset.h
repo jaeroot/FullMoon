@@ -17,7 +17,11 @@ class FULLMOON_API UFMPickupDataAsset : public UFMItemBaseDataAsset
 
 public:
 	UFMPickupDataAsset()
+		: MaxCount(0)
 	{
 		ItemType = UFMAssetManager::PickupItemType;
 	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Item)
+	int32 MaxCount;
 };

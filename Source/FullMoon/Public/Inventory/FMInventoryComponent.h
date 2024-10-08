@@ -4,10 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "ItemData/FMItemBaseDataAsset.h"
+#include "ItemData/FMPickupDataAsset.h"
 #include "FMInventoryComponent.generated.h"
-
-class UFMItemBaseDataAsset;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogFMInventory, Warning, All);
 
@@ -25,11 +23,11 @@ public:
 public:
 	FORCEINLINE void Clear() { ItemData = nullptr; ItemCount = 0; }
 
-	FORCEINLINE UFMItemBaseDataAsset* GetItemData() const { return ItemData; }
+	FORCEINLINE UFMPickupDataAsset* GetItemData() const { return ItemData; }
 	FORCEINLINE int32 GetItemCount() const { return ItemCount; }
 	FORCEINLINE FName GetItemName() const { return ItemData->ItemName; }
 
-	FORCEINLINE void SetItemData(UFMItemBaseDataAsset* NewItemData) { ItemData = NewItemData; }
+	FORCEINLINE void SetItemData(UFMPickupDataAsset* NewItemData) { ItemData = NewItemData; }
 
 	/** @return Remaining Item Count */ 
 	int32 AddItem(int32 NewItemCount)
@@ -50,7 +48,7 @@ public:
 
 public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Item)
-	TObjectPtr<UFMItemBaseDataAsset> ItemData;
+	TObjectPtr<UFMPickupDataAsset> ItemData;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Item)
 	int32 ItemCount;
@@ -76,7 +74,7 @@ public:
 	 * @return Remaining Item Count
 	 * If return 0, Successfully add All Item
 	 */
-	int32 AddInventoryItem(UFMItemBaseDataAsset* NewItemData, int32 NewItemCount);
+	int32 AddInventoryItem(UFMPickupDataAsset* NewItemData, int32 NewItemCount);
 	void RemoveInventoryItem(int32 SlotNum);
 	void SpawnInventoryItem(int32 SlotNum);
 	
