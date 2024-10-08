@@ -45,4 +45,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Weapon)
 	TArray<FAdditionalWeapon> AdditionalWeapons;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation)
+	TSubclassOf<UAnimInstance> WeaponAnimLayerClass;
+	
 };

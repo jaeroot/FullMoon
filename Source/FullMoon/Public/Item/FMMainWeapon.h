@@ -18,7 +18,7 @@ public:
 	AFMMainWeapon();
 
 public:
-	virtual void Attack();
+	virtual void Attack() override;
 	virtual void SpecialSkill();
 	virtual void NormalSkill1();
 	virtual void NormalSkill2();

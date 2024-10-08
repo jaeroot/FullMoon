@@ -45,7 +45,7 @@ protected:
 	TObjectPtr<UAnimInstance> AnimInstance;
 
 // Default Linked Anim Layer
-private:
+protected:
 	UPROPERTY(VisibleAnywhere, Category = Animation, meta=(AllowPrivateAccess = "true"))
 	TSubclassOf<UAnimInstance> DefaultLinkedAnimLayer;
 	

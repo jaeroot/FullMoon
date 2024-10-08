@@ -26,6 +26,7 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	
@@ -73,8 +74,11 @@ protected:
 	
 // Linked Anim Layers
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Animation)
-	TArray<TObjectPtr<UClass>> LinkedAnimLayers;
+	UPROPERTY(ReplicatedUsing = OnRep_WeaponAnimLayer, VisibleAnywhere, BlueprintReadOnly, Category = Animation)
+	TSubclassOf<UAnimInstance> WeaponAnimLayer;
+
+	UFUNCTION()
+	void OnRep_WeaponAnimLayer();
 
 // Inventory Component
 protected:

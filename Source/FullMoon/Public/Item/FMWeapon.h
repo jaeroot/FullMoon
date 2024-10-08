@@ -19,4 +19,7 @@ public:
 	AFMWeapon();
 
 	virtual void Interaction(AActor* OtherActor) override;
+
+protected:
+	virtual void Attack();
 };

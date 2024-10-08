@@ -17,3 +17,7 @@ void AFMWeapon::Interaction(AActor* OtherActor)
 		TakeWeaponActor->TakeWeapon(this);
 	}
 }
+
+void AFMWeapon::Attack()
+{
+}

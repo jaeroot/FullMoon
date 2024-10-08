@@ -17,6 +17,7 @@
 #include "Item/FMMainWeapon.h"
 #include "Item/FMPickup.h"
 #include "ItemData/FMMainWeaponDataAsset.h"
+#include "Net/UnrealNetwork.h"
 #include "Physics/FMCollision.h"
 #include "Stat/FMStatComponent.h"
 
@@ -81,6 +82,13 @@ void AFMPlayerCharacter::BeginPlay()
 		PlayerController->SetInputMode(InputModeGameOnly);
 	}
 
+}
+
+void AFMPlayerCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AFMPlayerCharacter, WeaponAnimLayer);
 }
 
 void AFMPlayerCharacter::Tick(float DeltaSeconds)
@@ -154,22 +162,42 @@ void AFMPlayerCharacter::Dash()
 
 void AFMPlayerCharacter::Attack()
 {
+	if (IsValid(CombatComponent->GetWeapon()))
+	{
+		CombatComponent->GetWeapon()->Attack();
+	}
 }
 
 void AFMPlayerCharacter::SpecialSkill()
 {
+	if (IsValid(CombatComponent->GetWeapon()))
+	{
+		CombatComponent->GetWeapon()->SpecialSkill();
+	}
 }
 
 void AFMPlayerCharacter::NormalSkill1()
 {
+	if (IsValid(CombatComponent->GetWeapon()))
+	{
+		CombatComponent->GetWeapon()->NormalSkill1();
+	}
 }
 
 void AFMPlayerCharacter::NormalSkill2()
 {
+	if (IsValid(CombatComponent->GetWeapon()))
+	{
+		CombatComponent->GetWeapon()->NormalSkill2();
+	}
 }
 
 void AFMPlayerCharacter::UltimateSkill()
 {
+	if (IsValid(CombatComponent->GetWeapon()))
+	{
+		CombatComponent->GetWeapon()->UltimateSkill();
+	}
 }
 
 void AFMPlayerCharacter::ToggleLockOn()
@@ -213,6 +241,11 @@ void AFMPlayerCharacter::SetChildMesh(const FName& Name)
 	GetChildMesh()->SetAnimClass(HeroData.HeroAnim);
 }
 
+void AFMPlayerCharacter::OnRep_WeaponAnimLayer()
+{
+	GetMesh()->LinkAnimClassLayers(WeaponAnimLayer);
+}
+
 void AFMPlayerCharacter::TraceForward()
 {
 	FHitResult HitResult;
@@ -239,17 +272,17 @@ void AFMPlayerCharacter::TraceForward()
 		FocusedInteractionActor = nullptr;
 	}
 
-	#if ENABLE_DRAW_DEBUG
-		FColor Color = bHitResult ? FColor::Green : FColor::Red;
-		DrawDebugLine(
-			GetWorld(),
-			Start,
-			End,
-			Color,
-			false,
-			2.0f
-		);
-	#endif
+	// #if ENABLE_DRAW_DEBUG
+	// 	FColor Color = bHitResult ? FColor::Green : FColor::Red;
+	// 	DrawDebugLine(
+	// 		GetWorld(),
+	// 		Start,
+	// 		End,
+	// 		Color,
+	// 		false,
+	// 		2.0f
+	// 	);
+	// #endif
 }
 
 void AFMPlayerCharacter::ServerInteraction_Implementation()
@@ -291,16 +324,19 @@ void AFMPlayerCharacter::TakeWeapon(AFMWeapon* Weapon)
 		return;
 	}
 
+	// Check Main Weapon
 	AFMMainWeapon* MainWeapon = Cast<AFMMainWeapon>(Weapon);
 	if (MainWeapon)
 	{
+		// Unequip OldWeapon
 		AFMMainWeapon* OldWeapon = CombatComponent->GetWeapon();
 		if (OldWeapon)
 		{
 			OldWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 			OldWeapon->SetEnableCollision(true);
 		}
-		
+
+		// Equip NewWeapon
 		CombatComponent->SetWeapon(MainWeapon);
 
 		UFMMainWeaponDataAsset* MainWeaponData = Cast<UFMMainWeaponDataAsset>(MainWeapon->GetItemData());
@@ -308,5 +344,9 @@ void AFMPlayerCharacter::TakeWeapon(AFMWeapon* Weapon)
 		
 		MainWeapon->SetEnableCollision(false);
 		MainWeapon->AttachToComponent(GetChildMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, MainWeaponData->WeaponSocket);
+
+		// Linke Weapon Anim Layer
+		WeaponAnimLayer = MainWeaponData->WeaponAnimLayerClass;
+		OnRep_WeaponAnimLayer();
 	}
 }
