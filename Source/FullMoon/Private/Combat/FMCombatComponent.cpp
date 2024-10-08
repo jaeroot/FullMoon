@@ -24,9 +24,14 @@ void UFMCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProper
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UFMCombatComponent, Weapon);
+	DOREPLIFETIME(UFMCombatComponent, AdditionalWeapons);
 }
 
 void UFMCombatComponent::OnRep_Weapon()
 {
 	
+}
+
+void UFMCombatComponent::OnRep_AdditionalWeapons()
+{
 }

@@ -21,7 +21,7 @@ struct FAdditionalWeapon
 	FName AdditionalWeaponSocket;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Weapon)
-	TSoftObjectPtr<UStaticMesh> AdditionalMesh;
+	TSubclassOf<AActor> AdditionalMesh;
 	
 };
 

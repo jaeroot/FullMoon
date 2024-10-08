@@ -26,11 +26,21 @@ public:
 public:
 	FORCEINLINE AFMMainWeapon* GetWeapon() const { return Weapon; }
 	FORCEINLINE void SetWeapon(AFMMainWeapon* NewWeapon) { Weapon = NewWeapon; }
-	
+
+	FORCEINLINE TArray<TObjectPtr<AActor>>& GetAdditionalWeapons() { return AdditionalWeapons; }
+
+// Weapon
 protected:
 	UPROPERTY(ReplicatedUsing = OnRep_Weapon, VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
 	TObjectPtr<AFMMainWeapon> Weapon;
+
+	UPROPERTY(ReplicatedUsing = OnRep_AdditionalWeapons, VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
+	TArray<TObjectPtr<AActor>> AdditionalWeapons;
 	
 	UFUNCTION()
 	void OnRep_Weapon();
+
+	UFUNCTION()
+	void OnRep_AdditionalWeapons();
+	
 };

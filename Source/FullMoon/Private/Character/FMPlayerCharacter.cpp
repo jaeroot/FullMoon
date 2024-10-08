@@ -334,6 +334,11 @@ void AFMPlayerCharacter::TakeWeapon(AFMWeapon* Weapon)
 		{
 			OldWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 			OldWeapon->SetEnableCollision(true);
+
+			for (auto& AdditionalWeapon : CombatComponent->GetAdditionalWeapons())
+			{
+				AdditionalWeapon->Destroy();
+			}
 		}
 
 		// Equip NewWeapon
@@ -345,6 +350,19 @@ void AFMPlayerCharacter::TakeWeapon(AFMWeapon* Weapon)
 		MainWeapon->SetEnableCollision(false);
 		MainWeapon->AttachToComponent(GetChildMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, MainWeaponData->WeaponSocket);
 
+		for (auto& AdditionalWeapon : MainWeaponData->AdditionalWeapons)
+		{
+			FActorSpawnParameters Params;
+			Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+			
+			AActor* SpawnedActor = GetWorld()->SpawnActor<AActor>(AdditionalWeapon.AdditionalMesh, Params);
+			if (IsValid(SpawnedActor))
+			{
+				SpawnedActor->AttachToComponent(GetChildMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, AdditionalWeapon.AdditionalWeaponSocket);
+				CombatComponent->GetAdditionalWeapons().Add(SpawnedActor);
+			}
+		}
+		
 		// Linke Weapon Anim Layer
 		WeaponAnimLayer = MainWeaponData->WeaponAnimLayerClass;
 		OnRep_WeaponAnimLayer();
