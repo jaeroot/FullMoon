@@ -8,7 +8,7 @@
 DEFINE_LOG_CATEGORY(LogFMSkill);
 
 UFMSkillBase::UFMSkillBase()
-	: SkillCost(0), SkillCoolTime(0)
+	: SkillCost(0.0f), SkillCoolTime(0.0f)
 {
 }
 

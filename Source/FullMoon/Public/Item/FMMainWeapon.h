@@ -4,8 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Item/FMWeapon.h"
+#include "ItemData/FMMainWeaponDataAsset.h"
 #include "FMMainWeapon.generated.h"
 
+class UFMMainWeaponDataAsset;
 /**
  * 
  */
@@ -16,6 +18,9 @@ class FULLMOON_API AFMMainWeapon : public AFMWeapon
 
 public:
 	AFMMainWeapon();
+
+public:
+	FORCEINLINE UFMMainWeaponDataAsset* GetWeaponData() const { return Cast<UFMMainWeaponDataAsset>(ItemData); }
 
 public:
 	virtual void Attack() override;
