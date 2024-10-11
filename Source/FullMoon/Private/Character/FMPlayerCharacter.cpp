@@ -32,11 +32,11 @@ AFMPlayerCharacter::AFMPlayerCharacter()
 	// Set Movement Component
 	GetCharacterMovement()->MaxWalkSpeed = WalkMaxSpeed;
 
-	// Set Inventory
-	InventoryComponent = CreateDefaultSubobject<UFMInventoryComponent>(TEXT("Inventory"));
-
 	// Set Interaction
 	bInteract = true;
+
+	// Set Inventory
+	InventoryComponent = CreateDefaultSubobject<UFMInventoryComponent>(TEXT("Inventory"));
 
 	// Stat Component
 	StatComponent = CreateDefaultSubobject<UFMStatComponent>(TEXT("Stat"));
@@ -334,11 +334,13 @@ void AFMPlayerCharacter::TakeWeapon(AFMWeapon* Weapon)
 		{
 			OldWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 			OldWeapon->SetEnableCollision(true);
+			OldWeapon->SetOwner(nullptr);
 
 			for (auto& AdditionalWeapon : CombatComponent->GetAdditionalWeapons())
 			{
 				AdditionalWeapon->Destroy();
 			}
+			CombatComponent->GetAdditionalWeapons().Empty();
 		}
 
 		// Equip NewWeapon
@@ -346,7 +348,8 @@ void AFMPlayerCharacter::TakeWeapon(AFMWeapon* Weapon)
 
 		UFMMainWeaponDataAsset* MainWeaponData = Cast<UFMMainWeaponDataAsset>(MainWeapon->GetItemData());
 		check(MainWeaponData);
-		
+
+		MainWeapon->SetOwner(this);
 		MainWeapon->SetEnableCollision(false);
 		MainWeapon->AttachToComponent(GetChildMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, MainWeaponData->WeaponSocket);
 
@@ -359,6 +362,7 @@ void AFMPlayerCharacter::TakeWeapon(AFMWeapon* Weapon)
 			if (IsValid(SpawnedActor))
 			{
 				SpawnedActor->AttachToComponent(GetChildMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, AdditionalWeapon.AdditionalWeaponSocket);
+				SpawnedActor->SetOwner(this);
 				CombatComponent->GetAdditionalWeapons().Add(SpawnedActor);
 			}
 		}

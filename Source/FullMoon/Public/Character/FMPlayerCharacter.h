@@ -80,11 +80,6 @@ protected:
 	UFUNCTION()
 	void OnRep_WeaponAnimLayer();
 
-// Inventory Component
-protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Inventory)
-	TObjectPtr<UFMInventoryComponent> InventoryComponent;
-
 // Interaction
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Interact)
@@ -99,6 +94,11 @@ protected:
 
 	virtual void TakeItem(class AFMPickup* Item) override;
 	virtual void TakeWeapon(class AFMWeapon* Weapon) override;
+
+// Inventory Component
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Inventory)
+	TObjectPtr<UFMInventoryComponent> InventoryComponent;
 
 // Stat Component
 protected:
