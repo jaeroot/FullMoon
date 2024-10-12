@@ -6,6 +6,7 @@
 #include "GameData/FMAssetManager.h"
 #include "GameData/FMHeroData.h"
 #include "ItemData/FMItemBaseDataAsset.h"
+#include "Skill/FMPlayerSkillData.h"
 #include "FMMainWeaponDataAsset.generated.h"
 
 class UFMSkillBase;
@@ -52,17 +53,6 @@ public:
 	TSubclassOf<UAnimInstance> WeaponAnimLayerClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill)
-	TObjectPtr<UFMSkillBase> AttackSkill;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill)
-	TObjectPtr<UFMSkillBase> SpecialSkill;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill)
-	TObjectPtr<UFMSkillBase> NormalSkill1;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill)
-	TObjectPtr<UFMSkillBase> NormalSkill2;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill)
-	TObjectPtr<UFMSkillBase> UltimateSkill;
+	TMap<EPlayerSkillCategory, TObjectPtr<UFMSkillBase>> Skills;
+	
 };

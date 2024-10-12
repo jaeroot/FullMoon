@@ -10,34 +10,3 @@
 AFMMainWeapon::AFMMainWeapon()
 {
 }
-
-void AFMMainWeapon::Attack()
-{
-	auto a = Cast<UFMMainWeaponDataAsset>(ItemData);
-	if (IsValid(a))
-	{
-		a->AttackSkill;
-
-		auto b = Cast<ACharacter>(GetOwner());
-		if (IsValid(b))
-		{
-			b->GetMesh()->GetAnimInstance()->Montage_Play(a->AttackSkill->SkillMontage);
-		}
-	}
-}
-
-void AFMMainWeapon::SpecialSkill()
-{
-}
-
-void AFMMainWeapon::NormalSkill1()
-{
-}
-
-void AFMMainWeapon::NormalSkill2()
-{
-}
-
-void AFMMainWeapon::UltimateSkill()
-{
-}

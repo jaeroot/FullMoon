@@ -4,6 +4,7 @@
 #include "Skill/FMSkillBase.h"
 
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 DEFINE_LOG_CATEGORY(LogFMSkill);
 
@@ -12,8 +13,16 @@ UFMSkillBase::UFMSkillBase()
 {
 }
 
-bool UFMSkillBase::ActivateSkill(ACharacter* Character)
+bool UFMSkillBase::ActivateSkill(AActor* Owner)
 {
+	if (!IsValid(Owner))
+	{
+		UE_LOG(LogFMSkill, Error, TEXT("Cannot Find Owner"));
+		
+		return false;
+	}
+
+	ACharacter* Character = Cast<ACharacter>(Owner);
 	if (!IsValid(Character))
 	{
 		UE_LOG(LogFMSkill, Error, TEXT("Cannot Find Character"));
@@ -29,7 +38,7 @@ bool UFMSkillBase::ActivateSkill(ACharacter* Character)
 		return false;
 	}
 
-	if (AnimInstance->IsAnyMontagePlaying())
+	if (AnimInstance->IsAnyMontagePlaying() || Character->GetCharacterMovement()->IsFalling())
 	{
 		return false;
 	}

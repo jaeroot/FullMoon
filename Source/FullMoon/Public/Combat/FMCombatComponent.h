@@ -4,9 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Skill/FMPlayerSkillData.h"
 #include "FMCombatComponent.generated.h"
 
 
+class UFMPlayerSkillComponent;
 class AFMMainWeapon;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -25,7 +27,7 @@ public:
 
 public:
 	FORCEINLINE AFMMainWeapon* GetWeapon() const { return Weapon; }
-	FORCEINLINE void SetWeapon(AFMMainWeapon* NewWeapon) { Weapon = NewWeapon; }
+	FORCEINLINE void SetWeapon(AFMMainWeapon* NewWeapon);
 
 	FORCEINLINE TArray<TObjectPtr<AActor>>& GetAdditionalWeapons() { return AdditionalWeapons; }
 
@@ -42,5 +44,14 @@ protected:
 
 	UFUNCTION()
 	void OnRep_AdditionalWeapons();
+
+// Skill
+public:
+	void ActivateSkill(EPlayerSkillCategory SkillCategory);
+	
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Skill)
+	TObjectPtr<UFMPlayerSkillComponent> SkillComponent;
+
 	
 };

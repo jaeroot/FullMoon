@@ -162,42 +162,27 @@ void AFMPlayerCharacter::Dash()
 
 void AFMPlayerCharacter::Attack()
 {
-	if (IsValid(CombatComponent->GetWeapon()))
-	{
-		CombatComponent->GetWeapon()->Attack();
-	}
+	CombatComponent->ActivateSkill(EPlayerSkillCategory::EPSC_Attack);
 }
 
 void AFMPlayerCharacter::SpecialSkill()
 {
-	if (IsValid(CombatComponent->GetWeapon()))
-	{
-		CombatComponent->GetWeapon()->SpecialSkill();
-	}
+	CombatComponent->ActivateSkill(EPlayerSkillCategory::EPSC_SpecialSkill);
 }
 
 void AFMPlayerCharacter::NormalSkill1()
 {
-	if (IsValid(CombatComponent->GetWeapon()))
-	{
-		CombatComponent->GetWeapon()->NormalSkill1();
-	}
+	CombatComponent->ActivateSkill(EPlayerSkillCategory::EPSC_NormalAttack1);
 }
 
 void AFMPlayerCharacter::NormalSkill2()
 {
-	if (IsValid(CombatComponent->GetWeapon()))
-	{
-		CombatComponent->GetWeapon()->NormalSkill2();
-	}
+	CombatComponent->ActivateSkill(EPlayerSkillCategory::EPSC_NormalAttack2);
 }
 
 void AFMPlayerCharacter::UltimateSkill()
 {
-	if (IsValid(CombatComponent->GetWeapon()))
-	{
-		CombatComponent->GetWeapon()->UltimateSkill();
-	}
+	CombatComponent->ActivateSkill(EPlayerSkillCategory::EPSC_Ultimate);
 }
 
 void AFMPlayerCharacter::ToggleLockOn()

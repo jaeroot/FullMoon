@@ -5,9 +5,12 @@
 
 #include "Item/FMMainWeapon.h"
 #include "Net/UnrealNetwork.h"
+#include "Skill/FMPlayerSkillComponent.h"
 
 UFMCombatComponent::UFMCombatComponent()
 {
+	SkillComponent = CreateDefaultSubobject<UFMPlayerSkillComponent>(TEXT("SkillComponent"));
+	
 	SetIsReplicatedByDefault(true);
 }
 
@@ -27,6 +30,24 @@ void UFMCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProper
 	DOREPLIFETIME(UFMCombatComponent, AdditionalWeapons);
 }
 
+void UFMCombatComponent::SetWeapon(AFMMainWeapon* NewWeapon)
+{
+	// Set New Weapon
+	Weapon = NewWeapon;
+
+	// Set Skills
+	UFMMainWeaponDataAsset* WeaponData = Weapon->GetWeaponData();
+	if (IsValid(WeaponData))
+	{
+		SkillComponent->InitSkills();
+		
+		for (auto& Skill : WeaponData->Skills)
+		{
+			SkillComponent->GetAllSkills()[static_cast<int32>(Skill.Key)] = Skill.Value;
+		}
+	}
+}
+
 void UFMCombatComponent::OnRep_Weapon()
 {
 	
@@ -34,4 +55,10 @@ void UFMCombatComponent::OnRep_Weapon()
 
 void UFMCombatComponent::OnRep_AdditionalWeapons()
 {
+}
+
+void UFMCombatComponent::ActivateSkill(EPlayerSkillCategory SkillCategory)
+{
+	// Activate Skill
+	SkillComponent->ActivateSkill(SkillCategory);
 }

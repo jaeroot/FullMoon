@@ -22,11 +22,5 @@ public:
 public:
 	FORCEINLINE UFMMainWeaponDataAsset* GetWeaponData() const { return Cast<UFMMainWeaponDataAsset>(ItemData); }
 
-public:
-	virtual void Attack() override;
-	virtual void SpecialSkill();
-	virtual void NormalSkill1();
-	virtual void NormalSkill2();
-	virtual void UltimateSkill();
 	
 };
