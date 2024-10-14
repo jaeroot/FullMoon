@@ -6,6 +6,7 @@
 #include "FMPlayerSkillData.h"
 #include "FMSkillBase.h"
 #include "Components/ActorComponent.h"
+#include "DataStructure/FMPriorityList.h"
 #include "FMSkillComponent.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogFMSkillComponent, Error, All);
