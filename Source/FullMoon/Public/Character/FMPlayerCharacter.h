@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Character/FMPlayerCharacterBase.h"
+#include "Interface/FMCharacterSkillInterface.h"
 #include "Interface/FMTakeItemInterface.h"
 #include "Interface/FMTakeWeaponInterface.h"
 #include "FMPlayerCharacter.generated.h"
@@ -14,7 +15,11 @@ class IFMInteractionInterface;
 class UFMInventoryComponent;
 
 UCLASS()
-class FULLMOON_API AFMPlayerCharacter : public AFMPlayerCharacterBase, public IFMTakeItemInterface, public  IFMTakeWeaponInterface
+class FULLMOON_API AFMPlayerCharacter
+	: public AFMPlayerCharacterBase,
+	  public IFMTakeItemInterface,
+	  public IFMTakeWeaponInterface,
+	  public IFMCharacterSkillInterface
 {
 	GENERATED_BODY()
 
@@ -109,5 +114,12 @@ protected:
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat)
 	TObjectPtr<UFMCombatComponent> CombatComponent;
+
+	virtual bool CanActivateSkill() override;
+	virtual void PlaySkillAnimation(UAnimMontage* AnimMontage, const FName& SectionName = FName()) override;
+	virtual void ApplySkillCost(float SkillCost) override;
+
+	UFUNCTION(Client, Unreliable)
+	void ClientPlaySkillAnimation(AFMPlayerCharacter* PlayerCharacter, UAnimMontage* AnimMontage, const FName& SectionName = FName());
 	
 };

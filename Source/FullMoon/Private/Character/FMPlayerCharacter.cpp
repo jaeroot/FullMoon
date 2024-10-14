@@ -3,6 +3,7 @@
 
 #include "Character/FMPlayerCharacter.h"
 
+#include "EngineUtils.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
@@ -356,4 +357,68 @@ void AFMPlayerCharacter::TakeWeapon(AFMWeapon* Weapon)
 		WeaponAnimLayer = MainWeaponData->WeaponAnimLayerClass;
 		OnRep_WeaponAnimLayer();
 	}
+}
+
+bool AFMPlayerCharacter::CanActivateSkill()
+{
+	// Check Montage is not playing
+	if (AnimInstance->IsAnyMontagePlaying())
+	{
+		return false;
+	}
+
+	// Check Is On Ground
+	if (GetCharacterMovement()->IsFalling())
+	{
+		return false;
+	}
+
+	// Stamina Check
+	
+
+
+
+	return true;
+}
+
+void AFMPlayerCharacter::PlaySkillAnimation(UAnimMontage* AnimMontage, const FName& SectionName)
+{
+	if (IsValid(AnimMontage))
+	{
+		AnimInstance->Montage_Play(AnimMontage);
+
+		if (!SectionName.IsNone())
+		{
+			AnimInstance->Montage_JumpToSection(SectionName, AnimMontage);
+		}
+	}
+
+	if (HasAuthority())
+	{
+		// Montage_Play to Simulated Proxy
+		for (const auto PlayerController : TActorRange<APlayerController>(GetWorld()))
+		{
+			if (PlayerController && PlayerController != GetController())
+			{
+				if (!PlayerController->IsLocalController())
+				{
+					AFMPlayerCharacter* OtherPlayerCharacter = Cast<AFMPlayerCharacter>(PlayerController->GetPawn());
+					if (IsValid(OtherPlayerCharacter))
+					{
+						OtherPlayerCharacter->ClientPlaySkillAnimation(this, AnimMontage, SectionName);
+					}
+				}
+			}
+		}
+	}
+}
+
+void AFMPlayerCharacter::ApplySkillCost(float SkillCost)
+{
+}
+
+void AFMPlayerCharacter::ClientPlaySkillAnimation_Implementation(AFMPlayerCharacter* PlayerCharacter,
+	UAnimMontage* AnimMontage, const FName& SectionName)
+{
+	PlayerCharacter->PlaySkillAnimation(AnimMontage, SectionName);
 }

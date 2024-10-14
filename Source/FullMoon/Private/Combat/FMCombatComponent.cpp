@@ -5,11 +5,11 @@
 
 #include "Item/FMMainWeapon.h"
 #include "Net/UnrealNetwork.h"
-#include "Skill/FMPlayerSkillComponent.h"
+#include "Skill/FMSkillComponent.h"
 
 UFMCombatComponent::UFMCombatComponent()
 {
-	SkillComponent = CreateDefaultSubobject<UFMPlayerSkillComponent>(TEXT("SkillComponent"));
+	SkillComponent = CreateDefaultSubobject<UFMSkillComponent>(TEXT("SkillComponent"));
 	
 	SetIsReplicatedByDefault(true);
 }
@@ -55,10 +55,15 @@ void UFMCombatComponent::OnRep_Weapon()
 
 void UFMCombatComponent::OnRep_AdditionalWeapons()
 {
+	
 }
 
-void UFMCombatComponent::ActivateSkill(EPlayerSkillCategory SkillCategory)
+void UFMCombatComponent::ActivateSkill(const EPlayerSkillCategory SkillCategory)
 {
 	// Activate Skill
-	SkillComponent->ActivateSkill(SkillCategory);
+	if (!GetOwner()->HasAuthority())
+	{
+		SkillComponent->ActivateSkill(SkillCategory);
+	}
+	SkillComponent->ServerActivateSkill(SkillCategory);
 }

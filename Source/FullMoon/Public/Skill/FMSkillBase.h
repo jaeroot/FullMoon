@@ -17,7 +17,7 @@ public:
 	UFMSkillBase();
 
 public:
-	virtual bool ActivateSkill(AActor* Owner);
+	virtual void ActivateSkill();
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill)

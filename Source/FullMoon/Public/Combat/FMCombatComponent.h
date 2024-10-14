@@ -8,7 +8,7 @@
 #include "FMCombatComponent.generated.h"
 
 
-class UFMPlayerSkillComponent;
+class UFMSkillComponent;
 class AFMMainWeapon;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -24,7 +24,7 @@ protected:
 
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
-
+	
 public:
 	FORCEINLINE AFMMainWeapon* GetWeapon() const { return Weapon; }
 	FORCEINLINE void SetWeapon(AFMMainWeapon* NewWeapon);
@@ -51,7 +51,7 @@ public:
 	
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Skill)
-	TObjectPtr<UFMPlayerSkillComponent> SkillComponent;
+	TObjectPtr<UFMSkillComponent> SkillComponent;
 
 	
 };
