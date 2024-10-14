@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "FMPlayerSkillData.h"
+#include "FMSkillBase.h"
 #include "Components/ActorComponent.h"
 #include "FMSkillComponent.generated.h"
 
@@ -11,6 +12,39 @@ DECLARE_LOG_CATEGORY_EXTERN(LogFMSkillComponent, Error, All);
 
 class UFMSkillBase;
 class IFMCharacterSkillInterface;
+
+USTRUCT(BlueprintType)
+struct FFMSkillData
+{
+	GENERATED_BODY()
+
+public:
+	FFMSkillData()
+		: bCanActivate(true)
+	{
+	}
+
+	explicit FFMSkillData(UFMSkillBase* NewSkillBase)
+		: SkillData(NewSkillBase)
+		, bCanActivate(true)
+	{
+	}
+
+public:
+	FORCEINLINE UFMSkillBase* GetSkillData() const { return SkillData; }
+	FORCEINLINE void SetSkillData(UFMSkillBase* NewSkillBase) { SkillData = NewSkillBase; }
+	
+	FORCEINLINE bool CanActivate() const { return bCanActivate; }
+	FORCEINLINE void SetCanActivate(bool NewBool) { bCanActivate = NewBool; }
+
+public:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Skill)
+	TObjectPtr<UFMSkillBase> SkillData;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Skill)
+	uint8 bCanActivate : 1;
+	
+};
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FULLMOON_API UFMSkillComponent : public UActorComponent
@@ -36,9 +70,8 @@ public:
 	bool ActivateSkill(const EPlayerSkillCategory SkillCategory);
 	
 public:
-	FORCEINLINE TArray<TObjectPtr<UFMSkillBase>>& GetAllSkills() { return Skills; }
-	FORCEINLINE UFMSkillBase* GetSkill(EPlayerSkillCategory SkillCategory) const { return Skills[static_cast<int32>(SkillCategory)]; }
-	FORCEINLINE void SetAllSkills(const TArray<TObjectPtr<UFMSkillBase>>& NewSkills) { ClearSkills(); Skills = NewSkills; };
+	FORCEINLINE TArray<FFMSkillData>& GetAllSkills() { return Skills; }
+	FORCEINLINE const FFMSkillData& GetSkill(EPlayerSkillCategory SkillCategory) const { return Skills[static_cast<int32>(SkillCategory)]; }
 	FORCEINLINE void ClearSkills() { Skills.Empty(); }
 
 	void InitSkills();
@@ -46,8 +79,11 @@ public:
 
 protected:
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category = Skill)
-	TArray<TObjectPtr<UFMSkillBase>> Skills;
+	TArray<FFMSkillData> Skills;
 
+	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Skill)
+	// TList<>
+	
 	/**
 	 * Used to check whether a skill is enabled.
 	 * if CurrentSkillIndex == -1, no skills are active.

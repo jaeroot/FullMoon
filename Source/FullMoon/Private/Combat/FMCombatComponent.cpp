@@ -43,7 +43,7 @@ void UFMCombatComponent::SetWeapon(AFMMainWeapon* NewWeapon)
 		
 		for (auto& Skill : WeaponData->Skills)
 		{
-			SkillComponent->GetAllSkills()[static_cast<int32>(Skill.Key)] = Skill.Value;
+			SkillComponent->GetAllSkills()[static_cast<int32>(Skill.Key)].SetSkillData(Skill.Value);
 		}
 	}
 }

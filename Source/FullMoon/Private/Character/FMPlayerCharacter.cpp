@@ -8,7 +8,6 @@
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "Combat/FMCombatComponent.h"
-#include "Engine/SkeletalMeshSocket.h"
 #include "GameData/FMGameSingleton.h"
 #include "GameData/FMHeroData.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -56,6 +55,9 @@ void AFMPlayerCharacter::PostInitializeComponents()
 	// Set Parent Skeletal Mesh
 	GetMesh()->SetVisibility(false);
 	GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+
+	// Set Character Dead Delegate
+	StatComponent->OnHPZeroDelegate.AddUObject(this, &AFMPlayerCharacter::SetDead);
 }
 
 void AFMPlayerCharacter::BeginPlay()
@@ -132,7 +134,10 @@ void AFMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 float AFMPlayerCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
 	class AController* EventInstigator, AActor* DamageCauser)
 {
-	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	float Damage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+
+	return Damage;
 }
 
 void AFMPlayerCharacter::ToggleMenu()
@@ -359,7 +364,11 @@ void AFMPlayerCharacter::TakeWeapon(AFMWeapon* Weapon)
 	}
 }
 
-bool AFMPlayerCharacter::CanActivateSkill()
+void AFMPlayerCharacter::SetDead()
+{
+}
+
+bool AFMPlayerCharacter::CanActivateSkill(const float SkillCost)
 {
 	// Check Montage is not playing
 	if (AnimInstance->IsAnyMontagePlaying())
@@ -374,9 +383,10 @@ bool AFMPlayerCharacter::CanActivateSkill()
 	}
 
 	// Stamina Check
-	
-
-
+	if (StatComponent->GetCurrentStamina() < SkillCost)
+	{
+		return false;
+	}
 
 	return true;
 }
@@ -413,8 +423,9 @@ void AFMPlayerCharacter::PlaySkillAnimation(UAnimMontage* AnimMontage, const FNa
 	}
 }
 
-void AFMPlayerCharacter::ApplySkillCost(float SkillCost)
+void AFMPlayerCharacter::ApplySkillCost(const float SkillCost)
 {
+	StatComponent->SubCurrentStamina(SkillCost);
 }
 
 void AFMPlayerCharacter::ClientPlaySkillAnimation_Implementation(AFMPlayerCharacter* PlayerCharacter,

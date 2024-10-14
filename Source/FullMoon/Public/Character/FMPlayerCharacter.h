@@ -110,14 +110,16 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat)
 	TObjectPtr<UFMStatComponent> StatComponent;
 
+	void SetDead();
+
 // Combat Component
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat)
 	TObjectPtr<UFMCombatComponent> CombatComponent;
 
-	virtual bool CanActivateSkill() override;
+	virtual bool CanActivateSkill(const float SkillCost) override;
 	virtual void PlaySkillAnimation(UAnimMontage* AnimMontage, const FName& SectionName = FName()) override;
-	virtual void ApplySkillCost(float SkillCost) override;
+	virtual void ApplySkillCost(const float SkillCost) override;
 
 	UFUNCTION(Client, Unreliable)
 	void ClientPlaySkillAnimation(AFMPlayerCharacter* PlayerCharacter, UAnimMontage* AnimMontage, const FName& SectionName = FName());

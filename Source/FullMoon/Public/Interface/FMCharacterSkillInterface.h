@@ -22,7 +22,7 @@ class FULLMOON_API IFMCharacterSkillInterface
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	virtual bool CanActivateSkill() = 0;
+	virtual bool CanActivateSkill(const float SkillCost) = 0;
 	virtual void PlaySkillAnimation(UAnimMontage* AnimMontage, const FName& SectionName = FName()) = 0;
-	virtual void ApplySkillCost(float SkillCost) = 0;
+	virtual void ApplySkillCost(const float SkillCost) = 0;
 };

@@ -13,7 +13,7 @@ UFMSkillComponent::UFMSkillComponent()
 {
 	SetIsReplicatedByDefault(true);
 
-	Skills.Init(nullptr, static_cast<int32>(EPlayerSkillCategory::EPSC_Max));
+	Skills.Init(FFMSkillData(nullptr), static_cast<int32>(EPlayerSkillCategory::EPSC_Max));
 
 	CurrentSkillIndex = -1;
 }
@@ -44,7 +44,10 @@ void UFMSkillComponent::ServerActivateSkill_Implementation(const EPlayerSkillCat
 	if (bResult)
 	{
 		// Calculate Skill Cost
-		OwnerCharacter->ApplySkillCost(Skills[CurrentSkillIndex]->SkillCost);
+		OwnerCharacter->ApplySkillCost(Skills[CurrentSkillIndex].GetSkillData()->SkillCost);
+
+		// Skill CoolDown
+		Skills[CurrentSkillIndex].SetCanActivate(false);
 	}
 }
 
@@ -60,15 +63,20 @@ bool UFMSkillComponent::ActivateSkill(const EPlayerSkillCategory SkillCategory)
 	}
 
 	// Check Skill Is nullptr
-	if (!Skills[SkillIndex])
+	if (!Skills[SkillIndex].GetSkillData())
 	{
 		UE_LOG(LogFMSkillComponent, Error, TEXT("Invalid Skill"));
 		
 		return false;
 	}
 
-	// Check Cooldown
-	// SkillComponent->GetSkill(SkillCategory);
+	// Check CoolDown
+	if (!Skills[SkillIndex].CanActivate())
+	{
+		UE_LOG(LogFMSkillComponent, Log, TEXT("Skill Is In CoolDown"));
+
+		return false;
+	}
 
 	// Check Owner Character IsValid
 	if (!OwnerCharacter)
@@ -79,7 +87,7 @@ bool UFMSkillComponent::ActivateSkill(const EPlayerSkillCategory SkillCategory)
 	}
 	
 	// Check Skill Condition
-	if (!OwnerCharacter->CanActivateSkill())
+	if (!OwnerCharacter->CanActivateSkill(Skills[SkillIndex].GetSkillData()->SkillCost))
 	{
 		UE_LOG(LogFMSkillComponent, Log, TEXT("Character Can't Activate Skill"));
 		
@@ -88,7 +96,7 @@ bool UFMSkillComponent::ActivateSkill(const EPlayerSkillCategory SkillCategory)
 
 	// Activate Skill
 	CurrentSkillIndex = SkillIndex;
-	OwnerCharacter->PlaySkillAnimation(Skills[SkillIndex]->SkillMontage);
+	OwnerCharacter->PlaySkillAnimation(Skills[SkillIndex].GetSkillData()->SkillMontage);
 
 	return true;
 }
@@ -97,11 +105,11 @@ void UFMSkillComponent::InitSkills()
 {
 	for (int Index = 0; Index < Skills.Num(); Index++)
 	{
-		Skills[Index] = nullptr;
+		Skills[Index].SetSkillData(nullptr);
 	}
 }
 
 void UFMSkillComponent::AddSkill(UFMSkillBase* Skill)
 {
-	Skills.Add(Skill);
+	Skills.Add(FFMSkillData(Skill));
 }
