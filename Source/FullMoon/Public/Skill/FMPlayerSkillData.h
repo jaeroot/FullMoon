@@ -14,3 +14,13 @@ enum class EPlayerSkillCategory : uint8
 
 	EPSC_Max				UMETA(Hidden)
 };
+
+UENUM(BlueprintType)
+enum class ESkillType : uint8
+{
+	EST_SweepAttack			UMETA(DisplayName = "SweepAttack"),
+	EST_Overlap				UMETA(DisplayName = "Overlap"),
+	EST_Buff				UMETA(DisplayName = "Buff"),
+
+	EST_Max					UMETA(Hidden)
+};

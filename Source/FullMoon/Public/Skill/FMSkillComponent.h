@@ -93,7 +93,8 @@ public:
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
 protected:
-	IFMCharacterSkillInterface* OwnerCharacter;
+	TObjectPtr<ACharacter> OwnerCharacter;
+	IFMCharacterSkillInterface* SkillOwnerCharacter;
 
 public:
 	UFUNCTION(Server, Reliable)
@@ -134,4 +135,16 @@ protected:
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = Skill)
 	int32 CurrentSkillIndex = -1;
 
+protected:
+	void HitStop(float NewPlayRate, float Duration);
+
+// Sweep Attack
+public:
+	void SweepAttack(const FVector& StartLocation, const FVector& EndLocation, float Radius, ECollisionChannel CollisionChannel, bool bIsStart, bool bIsEnd);
+
+protected:
+	TSet<TObjectPtr<AActor>> HitResultSet;
+
+	
+	
 };

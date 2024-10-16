@@ -73,3 +73,12 @@ void UFMCombatComponent::ActivateSkill(const EPlayerSkillCategory SkillCategory)
 		SkillComponent->ServerActivateSkill(SkillCategory);
 	}
 }
+
+void UFMCombatComponent::SweepAttack(FName FirstSocketName, FName SecondSocketName, float Radius,
+	ECollisionChannel CollisionChannel, bool bIsStart, bool bIsEnd)
+{
+	const FVector StartLocation = GetWeapon()->GetWeaponSocketLocation(FirstSocketName);
+	const FVector EndLocation = GetWeapon()->GetWeaponSocketLocation(SecondSocketName);
+
+	GetSkillComponent()->SweepAttack(StartLocation, EndLocation, Radius, CollisionChannel, bIsStart, bIsEnd);
+}

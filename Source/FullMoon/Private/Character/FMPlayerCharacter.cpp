@@ -469,3 +469,17 @@ void AFMPlayerCharacter::FinishedActivateSkill(UAnimMontage* Montage, bool bInte
 		}
 	}
 }
+
+UParticleSystemComponent* AFMPlayerCharacter::GetParticleSystemComponent() const
+{
+	return CombatComponent->GetWeapon()->GetParticleSystemComponent();
+}
+
+void AFMPlayerCharacter::SweepAttack(FName FirstSocketName, FName SecondSocketName, float Radius,
+	bool bIsStart, bool bIsEnd)
+{
+	if (IsLocallyControlled())
+	{
+		CombatComponent->SweepAttack(FirstSocketName, SecondSocketName, Radius, FM_CCHANNEL_PLAYERATTACK, bIsStart, bIsEnd);
+	}
+}

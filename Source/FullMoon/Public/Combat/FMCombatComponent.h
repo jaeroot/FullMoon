@@ -55,5 +55,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Skill)
 	TObjectPtr<UFMSkillComponent> SkillComponent;
 
+// Sweep Attack
+public:
+	void SweepAttack(FName FirstSocketName, FName SecondSocketName, float Radius, ECollisionChannel CollisionChannel, bool bIsStart, bool bIsEnd);
 	
 };

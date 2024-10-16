@@ -4,7 +4,10 @@
 #include "Skill/FMSkillComponent.h"
 
 #include "EngineUtils.h"
+#include "Engine/DamageEvents.h"
+#include "GameFramework/Character.h"
 #include "Interface/FMCharacterSkillInterface.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "Skill/FMSkillBase.h"
 
@@ -31,8 +34,9 @@ void UFMSkillComponent::InitializeComponent()
 void UFMSkillComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	OwnerCharacter = Cast<IFMCharacterSkillInterface>(GetOwner());
+
+	OwnerCharacter = Cast<ACharacter>(GetOwner());
+	SkillOwnerCharacter = Cast<IFMCharacterSkillInterface>(GetOwner());
 }
 
 void UFMSkillComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -97,16 +101,19 @@ void UFMSkillComponent::ServerActivateSkill_Implementation(const EPlayerSkillCat
 	if (bResult)
 	{
 		// Calculate Skill Cost
-		OwnerCharacter->ApplySkillCost(Skills[CurrentSkillIndex].GetSkillData()->SkillCost);
+		SkillOwnerCharacter->ApplySkillCost(Skills[CurrentSkillIndex].GetSkillData()->SkillCost);
 
 		// Skill CoolDown
-		Skills[CurrentSkillIndex].SetCanActivate(false);
-		CoolDownList.InsertNode(FFMSkillCoolDownData(CurrentSkillIndex, Skills[CurrentSkillIndex].SkillData->SkillCoolTime));
+		if (Skills[CurrentSkillIndex].GetSkillData()->SkillCoolTime > 0.0f)
+		{
+			Skills[CurrentSkillIndex].SetCanActivate(false);
+			CoolDownList.InsertNode(FFMSkillCoolDownData(CurrentSkillIndex, Skills[CurrentSkillIndex].SkillData->SkillCoolTime));
+		}
 	}
 	else if (!GetOwner()->HasAuthority())
 	{
 		// Server Failed To Activate Skill
-		OwnerCharacter->FailedActivateSkill();
+		SkillOwnerCharacter->FailedActivateSkill();
 	}
 }
 
@@ -138,7 +145,7 @@ bool UFMSkillComponent::ActivateSkill(const EPlayerSkillCategory SkillCategory)
 	}
 
 	// Check Owner Character IsValid
-	if (!OwnerCharacter)
+	if (!SkillOwnerCharacter)
 	{
 		UE_LOG(LogFMSkillComponent, Error, TEXT("Invalid Character"));
 		
@@ -146,7 +153,7 @@ bool UFMSkillComponent::ActivateSkill(const EPlayerSkillCategory SkillCategory)
 	}
 	
 	// Check Skill Condition
-	if (!OwnerCharacter->CanActivateSkill(Skills[SkillIndex].GetSkillData()->SkillCost))
+	if (!SkillOwnerCharacter->CanActivateSkill(Skills[SkillIndex].GetSkillData()->SkillCost))
 	{
 		UE_LOG(LogTemp, Log, TEXT("Character Can't Activate Skill"));
 		
@@ -155,8 +162,8 @@ bool UFMSkillComponent::ActivateSkill(const EPlayerSkillCategory SkillCategory)
 
 	// Activate Skill
 	CurrentSkillIndex = SkillIndex;
-	SkillCoolDowns[SkillIndex] = Skills[SkillIndex].GetSkillData()->SkillCost;
-	OwnerCharacter->PlaySkillAnimation(Skills[SkillIndex].GetSkillData()->SkillMontage);
+	SkillCoolDowns[SkillIndex] = Skills[SkillIndex].GetSkillData()->SkillCoolTime;
+	SkillOwnerCharacter->PlaySkillAnimation(Skills[SkillIndex].GetSkillData()->SkillMontage);
 
 	return true;
 }
@@ -185,4 +192,101 @@ void UFMSkillComponent::InitSkills()
 void UFMSkillComponent::AddSkill(UFMSkillBase* Skill)
 {
 	Skills.Add(FFMSkillData(Skill));
+}
+
+void UFMSkillComponent::HitStop(float NewPlayRate, float Duration)
+{
+	UAnimInstance* AnimInstance = OwnerCharacter->GetMesh()->GetAnimInstance();
+	UAnimMontage* CurrentMontage = AnimInstance->GetCurrentActiveMontage();
+	const float PlayRate = AnimInstance->Montage_GetPlayRate(CurrentMontage);
+				
+	AnimInstance->Montage_SetPlayRate(CurrentMontage, NewPlayRate);
+				
+	FTimerHandle Handle;
+	TWeakObjectPtr<UAnimInstance> WeakAnimInstance(AnimInstance);
+	TWeakObjectPtr<UAnimMontage> WeakCurrentMontage(CurrentMontage);
+	GetWorld()->GetTimerManager().SetTimer(
+		Handle,
+		FTimerDelegate::CreateLambda([WeakAnimInstance, WeakCurrentMontage, PlayRate]
+		{
+			if (WeakAnimInstance.IsValid() && WeakCurrentMontage.IsValid())
+			{
+				WeakAnimInstance->Montage_SetPlayRate(WeakCurrentMontage.Get(), PlayRate);
+			}
+		}),
+		Duration,
+		false,
+		-1
+	);
+}
+
+void UFMSkillComponent::SweepAttack(const FVector& StartLocation, const FVector& EndLocation, float Radius,
+                                    ECollisionChannel CollisionChannel, bool bIsStart, bool bIsEnd)
+{
+	if (bIsStart)
+	{
+		HitResultSet.Empty();
+	}
+
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(GetOwner());
+	TArray<FHitResult> HitResults;
+	bool bHitResult = GetWorld()->SweepMultiByChannel(
+		HitResults,
+		StartLocation,
+		EndLocation,
+		FQuat::Identity,
+		CollisionChannel,
+		FCollisionShape::MakeSphere(20.0f),
+		Params
+	);
+
+	bool bDrawDebug = false;
+	if (bHitResult)
+	{
+		// Check First Hit. If true, Hit Stop
+		if (HitResultSet.IsEmpty())
+		{
+			if (OwnerCharacter)
+			{
+				HitStop(0.03f, 0.07f);
+			}
+		}
+
+		for (auto& HitResult : HitResults)
+		{
+			// Remove Duplicates
+			if (HitResultSet.Contains(HitResult.GetActor()))
+			{
+				continue;
+			}
+
+			float AttackDamage = 100.0f;
+
+			HitResult.GetActor()->TakeDamage(AttackDamage, FDamageEvent(), OwnerCharacter->GetController(), OwnerCharacter);
+
+			/*UGameplayStatics::SpawnEmitterAtLocation(
+				GetWorld(),
+				Particle,
+				HitResult.ImpactPoint
+			);*/
+
+			HitResultSet.Add(HitResult.GetActor());
+			bDrawDebug = true;
+		}
+	}
+
+#if ENABLE_DRAW_DEBUG
+	FColor Color = bDrawDebug ? FColor::Green : FColor::Red;
+	DrawDebugCapsule(
+		GetWorld(),
+		(StartLocation + EndLocation) / 2,
+		FVector::Distance(StartLocation, EndLocation) / 2,
+		Radius,
+		FRotationMatrix::MakeFromZ(EndLocation - StartLocation).ToQuat(),
+		Color,
+		false,
+		2.0f
+	);
+#endif
 }

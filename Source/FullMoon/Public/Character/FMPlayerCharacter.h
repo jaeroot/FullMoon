@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Character/FMPlayerCharacterBase.h"
+#include "Interface/FMAnimNotifyInterface.h"
 #include "Interface/FMCharacterSkillInterface.h"
 #include "Interface/FMTakeItemInterface.h"
 #include "Interface/FMTakeWeaponInterface.h"
@@ -18,7 +19,8 @@ UCLASS()
 class FULLMOON_API AFMPlayerCharacter : public AFMPlayerCharacterBase,
 	  public IFMTakeItemInterface,
 	  public IFMTakeWeaponInterface,
-	  public IFMCharacterSkillInterface
+	  public IFMCharacterSkillInterface,
+	  public IFMAnimNotifyInterface
 {
 	GENERATED_BODY()
 
@@ -127,6 +129,12 @@ protected:
 	UFUNCTION(Client, Reliable)
 	void ClientFailedActivateSkill(AFMPlayerCharacter* PlayerCharacter);
 
+// Animation Notify
+protected:
 	UFUNCTION()
 	void FinishedActivateSkill(UAnimMontage* Montage, bool bInterrupted);
+
+	virtual UParticleSystemComponent* GetParticleSystemComponent() const override;
+	virtual void SweepAttack(FName FirstSocketName, FName SecondSocketName, float Radius, bool bIsStart, bool bIsEnd) override;
+	
 };

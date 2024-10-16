@@ -22,5 +22,12 @@ public:
 public:
 	FORCEINLINE UFMMainWeaponDataAsset* GetWeaponData() const { return Cast<UFMMainWeaponDataAsset>(ItemData); }
 
+	FORCEINLINE UParticleSystemComponent* GetParticleSystemComponent() const { return ParticleSystemComponent; }
+
+	FORCEINLINE FVector GetWeaponSocketLocation(const FName& InSocketName) const { return Mesh->GetSocketLocation(InSocketName); }
+	
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Particle")
+	TObjectPtr<UParticleSystemComponent> ParticleSystemComponent;
 	
 };
