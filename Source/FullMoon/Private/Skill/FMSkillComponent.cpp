@@ -201,7 +201,7 @@ void UFMSkillComponent::HitStop(float NewPlayRate, float Duration)
 	const float PlayRate = AnimInstance->Montage_GetPlayRate(CurrentMontage);
 				
 	AnimInstance->Montage_SetPlayRate(CurrentMontage, NewPlayRate);
-				
+	
 	FTimerHandle Handle;
 	TWeakObjectPtr<UAnimInstance> WeakAnimInstance(AnimInstance);
 	TWeakObjectPtr<UAnimMontage> WeakCurrentMontage(CurrentMontage);
@@ -223,24 +223,87 @@ void UFMSkillComponent::HitStop(float NewPlayRate, float Duration)
 void UFMSkillComponent::SweepAttack(const FVector& StartLocation, const FVector& EndLocation, float Radius,
                                     ECollisionChannel CollisionChannel, bool bIsStart, bool bIsEnd)
 {
+	// Initialize
 	if (bIsStart)
 	{
+		PrevLocation = (StartLocation + EndLocation) / 2;
+		PrevTime = 0.0f;
 		HitResultSet.Empty();
 	}
 
+	UAnimInstance* AnimInstance = OwnerCharacter->GetMesh()->GetAnimInstance();
+	UAnimMontage* CurrentMontage = AnimInstance->GetCurrentActiveMontage();
+	float CurrentTime = AnimInstance->Montage_GetPosition(CurrentMontage);
+
+	for (int32 i = 1; i <= 10; i++)
+	{
+		float Duration = CurrentTime - PrevTime;
+		float DurationTime = Duration / 10 * i;
+
+
+		/*******/
+
+		int32 Section = CurrentMontage->GetSectionIndexFromPosition(CurrentTime);
+		
+		TArray<UAnimationAsset*> AnimationAssets;
+		CurrentMontage->GetAllAnimationSequencesReferred(AnimationAssets);
+
+		UAnimSequence* AnimSequence = Cast<UAnimSequence>(AnimationAssets[Section]);
+		if (IsValid(AnimSequence))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s"), *AnimSequence->GetName());
+
+			FName BoneName = LeafBone;
+			FTransform BoneTransform = OwnerCharacter->GetMesh()->GetSocketTransform(TEXT("weapon_r_swordandshield"));
+			// Need to BoneTransform -> Local Space Transform (or Location)
+			// OwnerCharacter->GetMesh()->GetComponentTransform().InverseTransformPosition();
+			do
+			{
+				FTransform CurrentTransform;
+				int32 BoneIndex = OwnerCharacter->GetMesh()->GetBoneIndex(BoneName);
+				float CurrentPosition = AnimInstance->Montage_GetPosition(CurrentMontage);
+
+				AnimSequence->GetBoneTransform(CurrentTransform, FSkeletonPoseBoneIndex(BoneIndex), CurrentPosition, true);
+				
+				BoneTransform *= CurrentTransform;
+
+				BoneName = OwnerCharacter->GetMesh()->GetParentBone(BoneName);
+			}
+			while (BoneName != RootBone);
+
+			FVector NewLocation = BoneTransform.GetLocation() + OwnerCharacter->GetMesh()->GetSocketLocation(RootBone);
+
+			UE_LOG(LogTemp, Warning, TEXT("%s"), *NewLocation.ToString());
+		}
+		
+		/******/
+		
+		SweepCollisionDetection(StartLocation, EndLocation, Radius, CollisionChannel);
+	}
+	
+}
+
+void UFMSkillComponent::SweepCollisionDetection(const FVector& StartLocation, const FVector& EndLocation, float Radius,
+	ECollisionChannel CollisionChannel)
+{
+	const FVector CenterLocation = (StartLocation + EndLocation) / 2;
+	const FVector Direction = EndLocation - StartLocation;
+	const float HalfHeight = FVector::Distance(StartLocation, EndLocation) / 2;
+	
+	// Collision Detection (Capsule Sweep)
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(GetOwner());
 	TArray<FHitResult> HitResults;
 	bool bHitResult = GetWorld()->SweepMultiByChannel(
 		HitResults,
-		StartLocation,
-		EndLocation,
-		FQuat::Identity,
+		PrevLocation,
+		CenterLocation,
+		FRotationMatrix::MakeFromZ(Direction).ToQuat(),
 		CollisionChannel,
-		FCollisionShape::MakeSphere(20.0f),
+		FCollisionShape::MakeCapsule(Radius, HalfHeight),
 		Params
 	);
-
+	
 	bool bDrawDebug = false;
 	if (bHitResult)
 	{
@@ -252,7 +315,7 @@ void UFMSkillComponent::SweepAttack(const FVector& StartLocation, const FVector&
 				HitStop(0.03f, 0.07f);
 			}
 		}
-
+	
 		for (auto& HitResult : HitResults)
 		{
 			// Remove Duplicates
@@ -276,17 +339,48 @@ void UFMSkillComponent::SweepAttack(const FVector& StartLocation, const FVector&
 		}
 	}
 
+	// Draw Debug
 #if ENABLE_DRAW_DEBUG
 	FColor Color = bDrawDebug ? FColor::Green : FColor::Red;
 	DrawDebugCapsule(
 		GetWorld(),
-		(StartLocation + EndLocation) / 2,
-		FVector::Distance(StartLocation, EndLocation) / 2,
-		Radius,
-		FRotationMatrix::MakeFromZ(EndLocation - StartLocation).ToQuat(),
+		CenterLocation,
+		HalfHeight,
+		Radius / 2,
+		FRotationMatrix::MakeFromZ(Direction).ToQuat(),
+		Color,
+		false,
+		2.0f
+	);
+	DrawDebugCapsule(
+		GetWorld(),
+		PrevLocation,
+		HalfHeight,
+		Radius / 2,
+		FRotationMatrix::MakeFromZ(Direction).ToQuat(),
+		Color,
+		false,
+		2.0f
+	);
+
+	DrawDebugLine(
+		GetWorld(),
+		PrevLocation - (Direction / 2),
+		StartLocation,
+		Color,
+		false,
+		2.0f
+		);
+
+	DrawDebugLine(
+		GetWorld(),
+		PrevLocation + (Direction / 2),
+		EndLocation,
 		Color,
 		false,
 		2.0f
 	);
 #endif
+	
+	PrevLocation = CenterLocation;
 }

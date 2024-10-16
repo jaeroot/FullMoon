@@ -143,8 +143,13 @@ public:
 	void SweepAttack(const FVector& StartLocation, const FVector& EndLocation, float Radius, ECollisionChannel CollisionChannel, bool bIsStart, bool bIsEnd);
 
 protected:
+	const FName LeafBone = TEXT("hand_r");
+	const FName RootBone = TEXT("root");
+	
+	FVector PrevLocation;
+	float PrevTime = 0.0f;
 	TSet<TObjectPtr<AActor>> HitResultSet;
 
-	
+	void SweepCollisionDetection(const FVector& StartLocation, const FVector& EndLocation, float Radius, ECollisionChannel CollisionChannel);
 	
 };
