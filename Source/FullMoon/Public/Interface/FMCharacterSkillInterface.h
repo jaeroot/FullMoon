@@ -25,4 +25,5 @@ public:
 	virtual bool CanActivateSkill(const float SkillCost) = 0;
 	virtual void PlaySkillAnimation(UAnimMontage* AnimMontage, const FName& SectionName = FName()) = 0;
 	virtual void ApplySkillCost(const float SkillCost) = 0;
+	virtual void FailedActivateSkill() = 0;
 };

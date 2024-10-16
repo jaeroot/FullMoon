@@ -19,6 +19,7 @@
 #include "ItemData/FMMainWeaponDataAsset.h"
 #include "Net/UnrealNetwork.h"
 #include "Physics/FMCollision.h"
+#include "Skill/FMSkillComponent.h"
 #include "Stat/FMStatComponent.h"
 
 AFMPlayerCharacter::AFMPlayerCharacter()
@@ -85,6 +86,8 @@ void AFMPlayerCharacter::BeginPlay()
 		PlayerController->SetInputMode(InputModeGameOnly);
 	}
 
+	// Set Animation End Delegate
+	AnimInstance->OnMontageEnded.AddDynamic(this, &AFMPlayerCharacter::FinishedActivateSkill);
 }
 
 void AFMPlayerCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -411,7 +414,7 @@ void AFMPlayerCharacter::PlaySkillAnimation(UAnimMontage* AnimMontage, const FNa
 			if (PlayerController && PlayerController != GetController())
 			{
 				if (!PlayerController->IsLocalController())
-				{
+				{					
 					AFMPlayerCharacter* OtherPlayerCharacter = Cast<AFMPlayerCharacter>(PlayerController->GetPawn());
 					if (IsValid(OtherPlayerCharacter))
 					{
@@ -428,8 +431,41 @@ void AFMPlayerCharacter::ApplySkillCost(const float SkillCost)
 	StatComponent->SubCurrentStamina(SkillCost);
 }
 
+void AFMPlayerCharacter::FailedActivateSkill()
+{
+	for (const auto PlayerController : TActorRange<APlayerController>(GetWorld()))
+	{
+		if (PlayerController && PlayerController == GetController())
+		{
+			AFMPlayerCharacter* PlayerCharacter = Cast<AFMPlayerCharacter>(PlayerController->GetPawn());
+			if (IsValid(PlayerCharacter))
+			{
+				PlayerCharacter->ClientFailedActivateSkill(this);
+			}
+
+			break;
+		}
+	}
+}
+
+void AFMPlayerCharacter::ClientFailedActivateSkill_Implementation(AFMPlayerCharacter* PlayerCharacter)
+{
+	PlayerCharacter->CombatComponent->GetSkillComponent()->FailedActivateSkill();
+}
+
 void AFMPlayerCharacter::ClientPlaySkillAnimation_Implementation(AFMPlayerCharacter* PlayerCharacter,
-	UAnimMontage* AnimMontage, const FName& SectionName)
+                                                                 UAnimMontage* AnimMontage, const FName& SectionName)
 {
 	PlayerCharacter->PlaySkillAnimation(AnimMontage, SectionName);
+}
+
+void AFMPlayerCharacter::FinishedActivateSkill(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (IsLocallyControlled() || HasAuthority())
+	{
+		if (CombatComponent->GetSkillComponent()->GetCurrentSkillIndex() != -1)
+		{
+			CombatComponent->GetSkillComponent()->FinishedActivateSkill();
+		}
+	}
 }

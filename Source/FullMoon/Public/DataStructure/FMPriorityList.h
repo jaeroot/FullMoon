@@ -69,7 +69,9 @@ class TFMPriorityList
 public:
 	class TFMPriorityListNode
 	{
-	public:	
+	public:
+		friend class TFMPriorityList;
+		
 		explicit TFMPriorityListNode(const ElementType& InValue)
 			: Value(InValue), NextNode(nullptr)
 		{
@@ -131,25 +133,37 @@ public:
 	void InsertNode(const ElementType& InElement)
 	{
 		TNodePtr NewNode = new TNode(InElement);
-		
-		TNodePtr CurrentNode = Head;
+
+		// Add Node
 		if (Head == nullptr)
 		{
 			Head = NewNode;
-			ListSize++;
-
-			return;
 		}
-		
-		while (CurrentNode != nullptr)
+		else if (NewNode->GetValue() < Head->GetValue())	// Add Node To Head
 		{
-			// if (CurrentNode->GetValue() )
+			NewNode->NextNode = Head;
+			Head = NewNode;
 		}
-	}
+		else												// Add Node by ASC
+		{
+			TNodePtr CurrentNode = Head;
+			TNodePtr NextNode = Head->GetNextNode();
+			while (NextNode != nullptr)
+			{
+				if (NewNode->GetValue() < NextNode->GetValue())
+				{
+					break;
+				}
 
-	void RemoveNode(const ElementType& InElement)
-	{
+				CurrentNode = CurrentNode->GetNextNode();
+				NextNode = NextNode->GetNextNode();
+			}
+
+			CurrentNode->NextNode = NewNode;
+			NewNode->NextNode = NextNode;
+		}
 		
+		ListSize++;
 	}
 
 	void PopHead()
@@ -159,9 +173,9 @@ public:
 			TNodePtr Node = Head->NextNode;
 			delete Head;
 			Head = Node;
+			
+			ListSize--;
 		}
-
-		ListSize--;
 	}
 
 	void Empty()
@@ -178,12 +192,12 @@ public:
 		ListSize = 0;
 	}
 
-	TNodePtr* GetHead() const
+	TNodePtr GetHead() const
 	{
 		return Head;
 	}
 
-	TNodePtr* FindNode(const ElementType& InElement)
+	TNodePtr FindNode(const ElementType& InElement)
 	{
 		TNodePtr Node = Head;
 		while (Node != nullptr)

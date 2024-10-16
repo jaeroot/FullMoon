@@ -9,7 +9,7 @@
 #include "DataStructure/FMPriorityList.h"
 #include "FMSkillComponent.generated.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogFMSkillComponent, Error, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogFMSkillComponent, Log, All);
 
 class UFMSkillBase;
 class IFMCharacterSkillInterface;
@@ -47,6 +47,34 @@ public:
 	
 };
 
+struct FFMSkillCoolDownData
+{
+public:
+	FFMSkillCoolDownData()
+	{
+	}
+
+	FFMSkillCoolDownData(int32 NewIndex, float NewCoolDown)
+		: SkillIndex(NewIndex), SkillCoolDown(NewCoolDown)
+	{
+	}
+
+public:
+	bool operator<(const FFMSkillCoolDownData& SkillCoolDownData) const
+	{
+		if (SkillCoolDown < SkillCoolDownData.SkillCoolDown)
+		{
+			return true;
+		}
+		
+		return false;
+	}
+
+public:
+	int32 SkillIndex = 0;
+	float SkillCoolDown = 0.0f;
+};
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FULLMOON_API UFMSkillComponent : public UActorComponent
 {
@@ -61,29 +89,43 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
+public:
+	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	
 protected:
-	TObjectPtr<IFMCharacterSkillInterface> OwnerCharacter;
+	IFMCharacterSkillInterface* OwnerCharacter;
 
 public:
 	UFUNCTION(Server, Reliable)
 	void ServerActivateSkill(const EPlayerSkillCategory SkillCategory);
 	
 	bool ActivateSkill(const EPlayerSkillCategory SkillCategory);
+
+	void FinishedActivateSkill();
+	void FailedActivateSkill();
 	
 public:
 	FORCEINLINE TArray<FFMSkillData>& GetAllSkills() { return Skills; }
 	FORCEINLINE const FFMSkillData& GetSkill(EPlayerSkillCategory SkillCategory) const { return Skills[static_cast<int32>(SkillCategory)]; }
 	FORCEINLINE void ClearSkills() { Skills.Empty(); }
 
+	FORCEINLINE int32 GetCurrentSkillIndex() const { return CurrentSkillIndex; }
+
 	void InitSkills();
 	void AddSkill(UFMSkillBase* Skill);
 
 protected:
+	// Skill Data Array
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category = Skill)
 	TArray<FFMSkillData> Skills;
 
-	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Skill)
-	// TList<>
+	// Skill CoolDown Array for UI
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Skill)
+	TArray<float> SkillCoolDowns;
+
+	// Skill CoolDown List Calculated In Server
+	TFMPriorityList<FFMSkillCoolDownData> CoolDownList;
+	float ElapsedTime = 0.0f;
 	
 	/**
 	 * Used to check whether a skill is enabled.

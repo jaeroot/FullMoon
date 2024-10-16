@@ -31,6 +31,8 @@ public:
 
 	FORCEINLINE TArray<TObjectPtr<AActor>>& GetAdditionalWeapons() { return AdditionalWeapons; }
 
+	FORCEINLINE UFMSkillComponent* GetSkillComponent() const { return SkillComponent; }
+	
 // Weapon
 protected:
 	UPROPERTY(ReplicatedUsing = OnRep_Weapon, VisibleAnywhere, BlueprintReadOnly, Category = Weapon)

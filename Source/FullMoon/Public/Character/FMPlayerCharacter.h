@@ -15,8 +15,7 @@ class IFMInteractionInterface;
 class UFMInventoryComponent;
 
 UCLASS()
-class FULLMOON_API AFMPlayerCharacter
-	: public AFMPlayerCharacterBase,
+class FULLMOON_API AFMPlayerCharacter : public AFMPlayerCharacterBase,
 	  public IFMTakeItemInterface,
 	  public IFMTakeWeaponInterface,
 	  public IFMCharacterSkillInterface
@@ -120,8 +119,14 @@ protected:
 	virtual bool CanActivateSkill(const float SkillCost) override;
 	virtual void PlaySkillAnimation(UAnimMontage* AnimMontage, const FName& SectionName = FName()) override;
 	virtual void ApplySkillCost(const float SkillCost) override;
+	virtual void FailedActivateSkill() override;
 
 	UFUNCTION(Client, Unreliable)
 	void ClientPlaySkillAnimation(AFMPlayerCharacter* PlayerCharacter, UAnimMontage* AnimMontage, const FName& SectionName = FName());
-	
+
+	UFUNCTION(Client, Reliable)
+	void ClientFailedActivateSkill(AFMPlayerCharacter* PlayerCharacter);
+
+	UFUNCTION()
+	void FinishedActivateSkill(UAnimMontage* Montage, bool bInterrupted);
 };

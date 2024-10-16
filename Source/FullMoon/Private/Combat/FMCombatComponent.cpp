@@ -61,9 +61,15 @@ void UFMCombatComponent::OnRep_AdditionalWeapons()
 void UFMCombatComponent::ActivateSkill(const EPlayerSkillCategory SkillCategory)
 {
 	// Activate Skill
+	bool bResult = true;
+	
 	if (!GetOwner()->HasAuthority())
 	{
-		SkillComponent->ActivateSkill(SkillCategory);
+		bResult = SkillComponent->ActivateSkill(SkillCategory);
 	}
-	SkillComponent->ServerActivateSkill(SkillCategory);
+
+	if (bResult)
+	{
+		SkillComponent->ServerActivateSkill(SkillCategory);
+	}
 }
