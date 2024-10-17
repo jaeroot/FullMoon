@@ -218,69 +218,101 @@ void UFMSkillComponent::HitStop(float NewPlayRate, float Duration)
 		false,
 		-1
 	);
+	
 }
 
 void UFMSkillComponent::SweepAttack(const FVector& StartLocation, const FVector& EndLocation, float Radius,
-                                    ECollisionChannel CollisionChannel, bool bIsStart, bool bIsEnd)
+	ECollisionChannel CollisionChannel, bool bIsStart, bool bIsEnd,
+	const FTransform& FirstSocketLocalTransform, const FTransform& SecondSocketLocalTransform, FName WeaponSocketName)
 {
+	// Get Current AnimSequence
+	UAnimInstance* AnimInstance = OwnerCharacter->GetMesh()->GetAnimInstance();
+	UAnimMontage* CurrentMontage = AnimInstance->GetCurrentActiveMontage();
+	
+	float CurrentTime = AnimInstance->Montage_GetPosition(CurrentMontage);
+	int32 Section = CurrentMontage->GetSectionIndexFromPosition(CurrentTime);
+		
+	TArray<UAnimationAsset*> AnimationAssets;
+	CurrentMontage->GetAllAnimationSequencesReferred(AnimationAssets);
+
+	UAnimSequence* AnimSequence = Cast<UAnimSequence>(AnimationAssets[Section]);
+	if (!IsValid(AnimSequence))
+	{
+		// Failed to Find Current AnimSequence
+		UE_LOG(LogFMSkillComponent, Warning, TEXT("Invalid AnimSequence"));
+
+		return;
+	}
+	
 	// Initialize
 	if (bIsStart)
 	{
+		PrevMeshTransform = OwnerCharacter->GetMesh()->GetBoneTransform(RootBone);
 		PrevLocation = (StartLocation + EndLocation) / 2;
-		PrevTime = 0.0f;
+		PrevDirection = EndLocation - StartLocation;
+		PrevTime = CurrentTime;
 		HitResultSet.Empty();
-	}
+		ParentBones.Empty();
 
-	UAnimInstance* AnimInstance = OwnerCharacter->GetMesh()->GetAnimInstance();
-	UAnimMontage* CurrentMontage = AnimInstance->GetCurrentActiveMontage();
-	float CurrentTime = AnimInstance->Montage_GetPosition(CurrentMontage);
-
-	for (int32 i = 1; i <= 10; i++)
-	{
-		float Duration = CurrentTime - PrevTime;
-		float DurationTime = Duration / 10 * i;
-
-
-		/*******/
-
-		int32 Section = CurrentMontage->GetSectionIndexFromPosition(CurrentTime);
-		
-		TArray<UAnimationAsset*> AnimationAssets;
-		CurrentMontage->GetAllAnimationSequencesReferred(AnimationAssets);
-
-		UAnimSequence* AnimSequence = Cast<UAnimSequence>(AnimationAssets[Section]);
-		if (IsValid(AnimSequence))
+		// Add Parent Bones to ParentBones Array
+		FName CurrentBoneName = LeafBone;
+		while (CurrentBoneName != RootBone)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s"), *AnimSequence->GetName());
+			int32 BoneIndex = OwnerCharacter->GetMesh()->GetBoneIndex(CurrentBoneName);
+			ParentBones.Add(FFMBoneInfo(CurrentBoneName, BoneIndex));
 
-			FName BoneName = LeafBone;
-			FTransform BoneTransform = OwnerCharacter->GetMesh()->GetSocketTransform(TEXT("weapon_r_swordandshield"));
-			// Need to BoneTransform -> Local Space Transform (or Location)
-			// OwnerCharacter->GetMesh()->GetComponentTransform().InverseTransformPosition();
-			do
-			{
-				FTransform CurrentTransform;
-				int32 BoneIndex = OwnerCharacter->GetMesh()->GetBoneIndex(BoneName);
-				float CurrentPosition = AnimInstance->Montage_GetPosition(CurrentMontage);
-
-				AnimSequence->GetBoneTransform(CurrentTransform, FSkeletonPoseBoneIndex(BoneIndex), CurrentPosition, true);
-				
-				BoneTransform *= CurrentTransform;
-
-				BoneName = OwnerCharacter->GetMesh()->GetParentBone(BoneName);
-			}
-			while (BoneName != RootBone);
-
-			FVector NewLocation = BoneTransform.GetLocation() + OwnerCharacter->GetMesh()->GetSocketLocation(RootBone);
-
-			UE_LOG(LogTemp, Warning, TEXT("%s"), *NewLocation.ToString());
+			CurrentBoneName = OwnerCharacter->GetMesh()->GetParentBone(CurrentBoneName);
 		}
-		
-		/******/
 		
 		SweepCollisionDetection(StartLocation, EndLocation, Radius, CollisionChannel);
 	}
-	
+
+	// Init Data for Interpolation
+	float Duration = CurrentTime - PrevTime;
+	FTransform CurrentMeshTransform = OwnerCharacter->GetMesh()->GetBoneTransform(RootBone);
+
+	// Split between PrevLocation and CurrentLocation
+	float Distance = FVector::Distance(StartLocation, PrevLocation + (PrevDirection / 2));
+	int32 SplitNum = FMath::CeilToInt(Distance / (Radius * 2));
+	UE_LOG(LogTemp, Warning, TEXT("%s %s"), *StartLocation.ToString(), *(PrevLocation - (PrevDirection / 2)).ToString());
+	UE_LOG(LogTemp, Warning, TEXT("%f %d"), Distance, SplitNum);
+	for (int32 i = 1; i <= SplitNum; i++)
+	{
+		// Init Duration Time, Leaf Bone Name
+		float DurationTime = PrevTime + Duration * i / SplitNum;
+
+		// Calculate Bone Local Transform from RootBone
+		FTransform BoneTransform = FTransform::Identity;
+		for (int32 Index = ParentBones.Num() - 1; Index >= 0; Index--)
+		{
+			// Get Current Bone's Transform at DurationTime
+			FTransform CurrentTransform;
+			AnimSequence->GetBoneTransform(CurrentTransform, FSkeletonPoseBoneIndex(ParentBones[Index].BoneIndex), DurationTime, true);
+
+			BoneTransform = CurrentTransform * BoneTransform;
+		}
+
+		// Weapon Socket Transform
+		FTransform WeaponSocketTransform = OwnerCharacter->GetMesh()->GetSocketTransform(WeaponSocketName, RTS_ParentBoneSpace);
+		BoneTransform = WeaponSocketTransform * BoneTransform;
+		
+		// Interp Mesh Transform
+		FTransform InterpMeshTransform;
+		InterpMeshTransform.SetLocation(FMath::Lerp(PrevMeshTransform.GetLocation(), CurrentMeshTransform.GetLocation(), static_cast<float>(i) / 10));
+		InterpMeshTransform.SetRotation(FQuat::Slerp(PrevMeshTransform.GetRotation(), CurrentMeshTransform.GetRotation(), static_cast<float>(i) / 10));
+		InterpMeshTransform.SetScale3D(FMath::Lerp(PrevMeshTransform.GetScale3D(), CurrentMeshTransform.GetScale3D(), static_cast<float>(i) / 10));
+		BoneTransform = BoneTransform * InterpMeshTransform;
+
+		// Weapon Mesh Socket Transform
+		FTransform NewStartLocation = FirstSocketLocalTransform * BoneTransform;
+		FTransform NewEndLocation = SecondSocketLocalTransform * BoneTransform;
+		
+		// Do Interp
+		SweepCollisionDetection(NewStartLocation.GetLocation(), NewEndLocation.GetLocation(), Radius, CollisionChannel);
+	}
+
+	PrevMeshTransform = CurrentMeshTransform;
+	PrevTime = CurrentTime;
 }
 
 void UFMSkillComponent::SweepCollisionDetection(const FVector& StartLocation, const FVector& EndLocation, float Radius,
@@ -371,7 +403,7 @@ void UFMSkillComponent::SweepCollisionDetection(const FVector& StartLocation, co
 		false,
 		2.0f
 		);
-
+	
 	DrawDebugLine(
 		GetWorld(),
 		PrevLocation + (Direction / 2),
@@ -383,4 +415,5 @@ void UFMSkillComponent::SweepCollisionDetection(const FVector& StartLocation, co
 #endif
 	
 	PrevLocation = CenterLocation;
+	PrevDirection = Direction;
 }

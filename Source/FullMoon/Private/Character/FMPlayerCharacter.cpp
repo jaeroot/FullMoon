@@ -51,7 +51,7 @@ void AFMPlayerCharacter::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	// Set Child Skeletal Mesh
-	SetChildMesh(TEXT("UE5Manny"));
+	SetChildMesh(TEXT("UE4"));
 
 	// Set Parent Skeletal Mesh
 	GetMesh()->SetVisibility(false);

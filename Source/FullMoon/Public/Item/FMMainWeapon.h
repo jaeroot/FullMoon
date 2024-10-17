@@ -25,6 +25,7 @@ public:
 	FORCEINLINE UParticleSystemComponent* GetParticleSystemComponent() const { return ParticleSystemComponent; }
 
 	FORCEINLINE FVector GetWeaponSocketLocation(const FName& InSocketName) const { return Mesh->GetSocketLocation(InSocketName); }
+	FORCEINLINE FTransform GetWeaponSocketLocalTransform(const FName& InSocketName) const { return Mesh->GetSocketTransform(InSocketName, RTS_Actor); }
 	
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Particle")

@@ -75,6 +75,24 @@ public:
 	float SkillCoolDown = 0.0f;
 };
 
+struct FFMBoneInfo
+{
+public:
+	FFMBoneInfo()
+		: BoneIndex(0)
+	{
+	}
+
+	FFMBoneInfo(FName NewName, int32 NewIndex)
+		: BoneName(NewName), BoneIndex(NewIndex)
+	{
+	}
+
+public:
+	FName BoneName;
+	int32 BoneIndex;
+};
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FULLMOON_API UFMSkillComponent : public UActorComponent
 {
@@ -140,15 +158,20 @@ protected:
 
 // Sweep Attack
 public:
-	void SweepAttack(const FVector& StartLocation, const FVector& EndLocation, float Radius, ECollisionChannel CollisionChannel, bool bIsStart, bool bIsEnd);
+	void SweepAttack(const FVector& StartLocation, const FVector& EndLocation, float Radius, ECollisionChannel CollisionChannel, bool bIsStart, bool bIsEnd,
+		const FTransform& FirstSocketLocalTransform, const FTransform& SecondSocketLocalTransform, FName WeaponSocketName);
 
 protected:
 	const FName LeafBone = TEXT("hand_r");
 	const FName RootBone = TEXT("root");
-	
+
+	FTransform PrevMeshTransform;
 	FVector PrevLocation;
+	FVector PrevDirection;
 	float PrevTime = 0.0f;
+	
 	TSet<TObjectPtr<AActor>> HitResultSet;
+	TArray<FFMBoneInfo> ParentBones;
 
 	void SweepCollisionDetection(const FVector& StartLocation, const FVector& EndLocation, float Radius, ECollisionChannel CollisionChannel);
 	

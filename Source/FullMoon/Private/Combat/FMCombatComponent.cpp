@@ -80,5 +80,11 @@ void UFMCombatComponent::SweepAttack(FName FirstSocketName, FName SecondSocketNa
 	const FVector StartLocation = GetWeapon()->GetWeaponSocketLocation(FirstSocketName);
 	const FVector EndLocation = GetWeapon()->GetWeaponSocketLocation(SecondSocketName);
 
-	GetSkillComponent()->SweepAttack(StartLocation, EndLocation, Radius, CollisionChannel, bIsStart, bIsEnd);
+	const FTransform FirstSocketLocalTransform = GetWeapon()->GetWeaponSocketLocalTransform(FirstSocketName);
+	const FTransform SecondSocketLocalTransform = GetWeapon()->GetWeaponSocketLocalTransform(SecondSocketName);
+	
+	FName WeaponSocketName = GetWeapon()->GetWeaponData()->WeaponSocket;
+
+	GetSkillComponent()->SweepAttack(StartLocation, EndLocation, Radius, CollisionChannel, bIsStart, bIsEnd
+		, FirstSocketLocalTransform, SecondSocketLocalTransform, WeaponSocketName);
 }
