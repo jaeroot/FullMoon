@@ -174,5 +174,8 @@ protected:
 	TArray<FFMBoneInfo> ParentBones;
 
 	void SweepCollisionDetection(const FVector& StartLocation, const FVector& EndLocation, float Radius, ECollisionChannel CollisionChannel);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerSweepAttack(const TArray<FHitResult>& HitResults);
 	
 };

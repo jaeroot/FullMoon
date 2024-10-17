@@ -265,17 +265,23 @@ void UFMSkillComponent::SweepAttack(const FVector& StartLocation, const FVector&
 		}
 		
 		SweepCollisionDetection(StartLocation, EndLocation, Radius, CollisionChannel);
+
+		return;
 	}
 
+	// Calculate SplitNum. If Distance < Radius and !bIsEnd, Don't perform collision detection.
+	float Distance = FVector::Distance(StartLocation, PrevLocation + (PrevDirection / 2));
+	int32 SplitNum = FMath::CeilToInt(Distance / (Radius * 2));
+	if (!bIsEnd && Distance < Radius)
+	{
+		return;
+	}
+	
 	// Init Data for Interpolation
 	float Duration = CurrentTime - PrevTime;
 	FTransform CurrentMeshTransform = OwnerCharacter->GetMesh()->GetBoneTransform(RootBone);
-
+	
 	// Split between PrevLocation and CurrentLocation
-	float Distance = FVector::Distance(StartLocation, PrevLocation + (PrevDirection / 2));
-	int32 SplitNum = FMath::CeilToInt(Distance / (Radius * 2));
-	UE_LOG(LogTemp, Warning, TEXT("%s %s"), *StartLocation.ToString(), *(PrevLocation - (PrevDirection / 2)).ToString());
-	UE_LOG(LogTemp, Warning, TEXT("%f %d"), Distance, SplitNum);
 	for (int32 i = 1; i <= SplitNum; i++)
 	{
 		// Init Duration Time, Leaf Bone Name
@@ -347,7 +353,7 @@ void UFMSkillComponent::SweepCollisionDetection(const FVector& StartLocation, co
 				HitStop(0.03f, 0.07f);
 			}
 		}
-	
+
 		for (auto& HitResult : HitResults)
 		{
 			// Remove Duplicates
@@ -356,9 +362,9 @@ void UFMSkillComponent::SweepCollisionDetection(const FVector& StartLocation, co
 				continue;
 			}
 
-			float AttackDamage = 100.0f;
-
-			HitResult.GetActor()->TakeDamage(AttackDamage, FDamageEvent(), OwnerCharacter->GetController(), OwnerCharacter);
+			// float AttackDamage = 100.0f;
+			//
+			// HitResult.GetActor()->TakeDamage(AttackDamage, FDamageEvent(), OwnerCharacter->GetController(), OwnerCharacter);
 
 			/*UGameplayStatics::SpawnEmitterAtLocation(
 				GetWorld(),
@@ -369,6 +375,8 @@ void UFMSkillComponent::SweepCollisionDetection(const FVector& StartLocation, co
 			HitResultSet.Add(HitResult.GetActor());
 			bDrawDebug = true;
 		}
+
+		ServerSweepAttack(HitResults);
 	}
 
 	// Draw Debug
@@ -416,4 +424,14 @@ void UFMSkillComponent::SweepCollisionDetection(const FVector& StartLocation, co
 	
 	PrevLocation = CenterLocation;
 	PrevDirection = Direction;
+}
+
+void UFMSkillComponent::ServerSweepAttack_Implementation(const TArray<FHitResult>& HitResults)
+{
+	
+}
+
+bool UFMSkillComponent::ServerSweepAttack_Validate(const TArray<FHitResult>& HitResults)
+{
+	return true;
 }
