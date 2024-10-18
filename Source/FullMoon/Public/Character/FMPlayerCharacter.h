@@ -122,6 +122,7 @@ protected:
 	virtual void PlaySkillAnimation(UAnimMontage* AnimMontage, const FName& SectionName = FName()) override;
 	virtual void ApplySkillCost(const float SkillCost) override;
 	virtual void FailedActivateSkill() override;
+	virtual float GetAttackDamage() override;
 
 	UFUNCTION(Client, Unreliable)
 	void ClientPlaySkillAnimation(AFMPlayerCharacter* PlayerCharacter, UAnimMontage* AnimMontage, const FName& SectionName = FName());

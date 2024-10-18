@@ -6,6 +6,7 @@
 #include "EngineUtils.h"
 #include "Engine/DamageEvents.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/GameStateBase.h"
 #include "Interface/FMCharacterSkillInterface.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -95,7 +96,7 @@ void UFMSkillComponent::TickComponent(float DeltaTime, enum ELevelTick TickType,
 	}
 }
 
-void UFMSkillComponent::ServerActivateSkill_Implementation(const EPlayerSkillCategory SkillCategory)
+void UFMSkillComponent::ServerActivateSkill_Implementation(const EPlayerSkillCategory SkillCategory, const float CurrentTime)
 {
 	bool bResult = ActivateSkill(SkillCategory);
 	if (bResult)
@@ -109,6 +110,9 @@ void UFMSkillComponent::ServerActivateSkill_Implementation(const EPlayerSkillCat
 			Skills[CurrentSkillIndex].SetCanActivate(false);
 			CoolDownList.InsertNode(FFMSkillCoolDownData(CurrentSkillIndex, Skills[CurrentSkillIndex].SkillData->SkillCoolTime));
 		}
+
+		// Save Attack Start Time to Check Attack Hit IsValid
+		AttackStartTime = CurrentTime;
 	}
 	else if (!GetOwner()->HasAuthority())
 	{
@@ -354,6 +358,7 @@ void UFMSkillComponent::SweepCollisionDetection(const FVector& StartLocation, co
 			}
 		}
 
+		TArray<FHitResult> RemovedDuplicateHitResults;
 		for (auto& HitResult : HitResults)
 		{
 			// Remove Duplicates
@@ -373,10 +378,17 @@ void UFMSkillComponent::SweepCollisionDetection(const FVector& StartLocation, co
 			);*/
 
 			HitResultSet.Add(HitResult.GetActor());
+			RemovedDuplicateHitResults.Add(HitResult);
 			bDrawDebug = true;
 		}
 
-		ServerSweepAttack(HitResults);
+		// Remove Duplicate Hit Result.
+		// If Client Failed to activate skill, Don't Call ServerRPC
+		if (RemovedDuplicateHitResults.Num() > 0 && CurrentSkillIndex != -1)
+		{
+			float CurrentTime = GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
+			ServerSweepAttack(RemovedDuplicateHitResults, CurrentTime);
+		}
 	}
 
 	// Draw Debug
@@ -426,12 +438,49 @@ void UFMSkillComponent::SweepCollisionDetection(const FVector& StartLocation, co
 	PrevDirection = Direction;
 }
 
-void UFMSkillComponent::ServerSweepAttack_Implementation(const TArray<FHitResult>& HitResults)
+void UFMSkillComponent::ServerSweepAttack_Implementation(const TArray<FHitResult>& HitResults, const float AttackTime)
 {
+	// If Client Skill Activate Succeed, but Server Activate Failed (cause NetworkDelay, etc...)
+	// Pass Validate. But Implementation Function will return without doing anything
+	if (CurrentSkillIndex == -1)
+	{
+		return;
+	}
 	
+	float AttackDamage = SkillOwnerCharacter->GetAttackDamage();
+	for (auto& HitResult : HitResults)
+	{
+		HitResult.GetActor()->TakeDamage(AttackDamage, FDamageEvent(), OwnerCharacter->GetController(), OwnerCharacter);
+	}
 }
 
-bool UFMSkillComponent::ServerSweepAttack_Validate(const TArray<FHitResult>& HitResults)
+bool UFMSkillComponent::ServerSweepAttack_Validate(const TArray<FHitResult>& HitResults, const float AttackTime)
 {
-	return true;
+	// If Client Skill Activate Succeed, but Server Activate Failed (cause NetworkDelay, etc...)
+	// Pass Validate. But Implementation Function will return without doing anything
+	if (CurrentSkillIndex == -1)
+	{
+		return true;
+	}
+	
+	// Get Current AnimSequence
+	UAnimInstance* AnimInstance = OwnerCharacter->GetMesh()->GetAnimInstance();
+	UAnimMontage* CurrentMontage = AnimInstance->GetCurrentActiveMontage();
+	
+	TArray<FAnimNotifyEvent> Notifies = CurrentMontage->Notifies;
+	float TimeDiff = AttackTime - AttackStartTime;
+	for (auto& Notify : Notifies)
+	{
+		if (Notify.NotifyName == SweepAttackName)
+		{
+			// Notifies are called Tick after TriggerTime
+			// So Calculate by adding a NotifyTriggerThreshold
+			if (TimeDiff >= Notify.GetTriggerTime() || TimeDiff < Notify.GetEndTriggerTime() + NotifyTriggerThreshold)
+			{
+				return true;
+			}
+		}
+	}
+	
+	return false;
 }

@@ -116,7 +116,7 @@ protected:
 
 public:
 	UFUNCTION(Server, Reliable)
-	void ServerActivateSkill(const EPlayerSkillCategory SkillCategory);
+	void ServerActivateSkill(const EPlayerSkillCategory SkillCategory, const float CurrentTime);
 	
 	bool ActivateSkill(const EPlayerSkillCategory SkillCategory);
 
@@ -153,6 +153,9 @@ protected:
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = Skill)
 	int32 CurrentSkillIndex = -1;
 
+	float AttackStartTime = 0.0f;
+	const float AllowableDelayTime = 3.0f;
+
 protected:
 	void HitStop(float NewPlayRate, float Duration);
 
@@ -176,6 +179,9 @@ protected:
 	void SweepCollisionDetection(const FVector& StartLocation, const FVector& EndLocation, float Radius, ECollisionChannel CollisionChannel);
 
 	UFUNCTION(Server, Reliable, WithValidation)
-	void ServerSweepAttack(const TArray<FHitResult>& HitResults);
+	void ServerSweepAttack(const TArray<FHitResult>& HitResults, const float AttackTime);
+
+	const FName SweepAttackName = TEXT("FMSweepAttack");
+	const float NotifyTriggerThreshold = 0.02f;
 	
 };

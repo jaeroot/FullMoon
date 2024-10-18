@@ -139,6 +139,10 @@ float AFMPlayerCharacter::TakeDamage(float DamageAmount, struct FDamageEvent con
 {
 	float Damage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
+	float Defense = StatComponent->GetTotalStat().Defense;
+	float ApplyDamage = FMath::Clamp(DamageAmount - Defense, 1.0f, DamageAmount);
+
+	StatComponent->SubCurrentHP(ApplyDamage);
 
 	return Damage;
 }
@@ -446,6 +450,11 @@ void AFMPlayerCharacter::FailedActivateSkill()
 			break;
 		}
 	}
+}
+
+float AFMPlayerCharacter::GetAttackDamage()
+{
+	return StatComponent->GetTotalStat().AttackDamage;
 }
 
 void AFMPlayerCharacter::ClientFailedActivateSkill_Implementation(AFMPlayerCharacter* PlayerCharacter)

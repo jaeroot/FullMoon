@@ -3,6 +3,7 @@
 
 #include "Combat/FMCombatComponent.h"
 
+#include "GameFramework/GameStateBase.h"
 #include "Item/FMMainWeapon.h"
 #include "Net/UnrealNetwork.h"
 #include "Skill/FMSkillComponent.h"
@@ -70,7 +71,8 @@ void UFMCombatComponent::ActivateSkill(const EPlayerSkillCategory SkillCategory)
 
 	if (bResult)
 	{
-		SkillComponent->ServerActivateSkill(SkillCategory);
+		float CurrentTime = GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
+		SkillComponent->ServerActivateSkill(SkillCategory, CurrentTime);
 	}
 }
 

@@ -30,4 +30,7 @@ public:
 	virtual void ApplySkillCost(const float SkillCost) = 0;
 	virtual void FailedActivateSkill() = 0;
 
+	// Skill Attack Damage
+	virtual float GetAttackDamage() = 0;
+	
 };
