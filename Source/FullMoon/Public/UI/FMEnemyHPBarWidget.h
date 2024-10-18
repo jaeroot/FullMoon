@@ -18,7 +18,7 @@ protected:
 	virtual void NativeConstruct() override;
 
 public:
-	void SetEnemyName(FName NewName);
+	void SetEnemyName(const FString& NewName);
 
 protected:
 	UPROPERTY()

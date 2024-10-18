@@ -14,5 +14,12 @@ class FULLMOON_API UBTService_FMDetect : public UBTService
 {
 	GENERATED_BODY()
 
-	
+public:
+	UBTService_FMDetect();
+
+protected:
+	virtual void TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
+
+	UPROPERTY(EditAnywhere)
+	float TraceRadius;
 };

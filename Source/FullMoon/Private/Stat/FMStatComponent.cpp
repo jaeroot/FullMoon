@@ -56,7 +56,7 @@ void UFMStatComponent::InitializeComponent()
 {
 	Super::InitializeComponent();
 
-	InitPlayerStat(TEXT("UE5Manny"));
+	InitPlayerStat(TEXT("UE4"));
 
 	OnStatChangedDelegate.AddUObject(this, &UFMStatComponent::SetNewMaxStat);
 

@@ -8,18 +8,18 @@
 
 void UFMEnemyHPBarWidget::NativeConstruct()
 {
-	Super::NativeConstruct();
-
 	EnemyName = Cast<UTextBlock>(GetWidgetFromName(TEXT("TEXT_Name")));
 	
+	Super::NativeConstruct();
+
 	FrontProgressBar->SetFillColorAndOpacity(FLinearColor(0.545098f, 0.0f, 0.0f, 1.0f));
 	
 }
 
-void UFMEnemyHPBarWidget::SetEnemyName(const FName NewName)
+void UFMEnemyHPBarWidget::SetEnemyName(const FString& NewName)
 {
 	if (EnemyName)
 	{
-		EnemyName->SetText(FText::FromName(NewName));
+		EnemyName->SetText(FText::FromString(NewName));
 	}
 }
