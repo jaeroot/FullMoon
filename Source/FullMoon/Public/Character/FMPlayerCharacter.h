@@ -6,10 +6,12 @@
 #include "Character/FMPlayerCharacterBase.h"
 #include "Interface/FMAnimNotifyInterface.h"
 #include "Interface/FMCharacterSkillInterface.h"
+#include "Interface/FMHUDInterface.h"
 #include "Interface/FMTakeItemInterface.h"
 #include "Interface/FMTakeWeaponInterface.h"
 #include "FMPlayerCharacter.generated.h"
 
+class UFMHUDWidget;
 class UFMCombatComponent;
 class UFMStatComponent;
 class IFMInteractionInterface;
@@ -20,7 +22,8 @@ class FULLMOON_API AFMPlayerCharacter : public AFMPlayerCharacterBase,
 	  public IFMTakeItemInterface,
 	  public IFMTakeWeaponInterface,
 	  public IFMCharacterSkillInterface,
-	  public IFMAnimNotifyInterface
+	  public IFMAnimNotifyInterface,
+	  public IFMHUDInterface
 {
 	GENERATED_BODY()
 
@@ -137,5 +140,15 @@ protected:
 
 	virtual UParticleSystemComponent* GetParticleSystemComponent() const override;
 	virtual void SweepAttack(FName FirstSocketName, FName SecondSocketName, float Radius, bool bIsStart, bool bIsEnd) override;
+	
+// Widget
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD")
+	TSubclassOf<UFMHUDWidget> FMHUDWidgetClass;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "HUD")
+	TObjectPtr<UFMHUDWidget> FMHUDWidget;
+
+	virtual void SetupHUDWidget(class UFMHUDWidget* InHUDWidget) override;
 	
 };

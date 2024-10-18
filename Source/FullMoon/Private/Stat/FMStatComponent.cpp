@@ -11,6 +11,32 @@ UFMStatComponent::UFMStatComponent()
 {
 	bWantsInitializeComponent = true;
 
+	HPLerpTimelineComponent = CreateDefaultSubobject<UTimelineComponent>(TEXT("HPLerpTimelineComponent"));
+	OldHPCurveCallback.BindUFunction(this, FName("OldHPLerp"));
+	static ConstructorHelpers::FObjectFinder<UCurveFloat>
+		OldHPCurveRef(TEXT("/Game/_FullMoon/UI/InGame/LayeredHPBar/CurveFloat_OldHP.CurveFloat_OldHP"));
+	if (OldHPCurveRef.Succeeded())
+	{
+		OldHPCurve = OldHPCurveRef.Object;
+
+		HPLerpTimelineComponent->SetLooping(false);
+		HPLerpTimelineComponent->AddInterpFloat(OldHPCurve, OldHPCurveCallback);
+		HPLerpTimelineComponent->SetTimelineLength(0.5f);
+	}
+	
+	StaminaLerpTimelineComponent = CreateDefaultSubobject<UTimelineComponent>(TEXT("StaminaLerpTimelineComponent"));
+	OldStaminaCurveCallback.BindUFunction(this, FName("OldStaminaLerp"));
+	static ConstructorHelpers::FObjectFinder<UCurveFloat>
+		OldStaminaCurveRef(TEXT("/Game/_FullMoon/UI/InGame/LayeredHPBar/CurveFloat_OldStamina.CurveFloat_OldStamina"));
+	if (OldStaminaCurveRef.Succeeded())
+	{
+		OldStaminaCurve = OldStaminaCurveRef.Object;
+
+		StaminaLerpTimelineComponent->SetLooping(false);
+		StaminaLerpTimelineComponent->AddInterpFloat(OldStaminaCurve, OldStaminaCurveCallback);
+		StaminaLerpTimelineComponent->SetTimelineLength(0.3f);
+	}
+
 	SetIsReplicatedByDefault(true);
 }
 
@@ -55,6 +81,7 @@ void UFMStatComponent::AddCurrentHP(const float AddHP)
 	if (PrevHP != CurrentHP)
 	{
 		OnHPChangedDelegate.Broadcast(CurrentHP, MaxHP);
+		OldHP = CurrentHP;
 	}
 	
 	if (CurrentHP <= KINDA_SMALL_NUMBER)
@@ -71,6 +98,7 @@ void UFMStatComponent::SubCurrentHP(const float SubHP)
 	if (PrevHP != CurrentHP)
 	{
 		OnHPChangedDelegate.Broadcast(CurrentHP, MaxHP);
+		CalculateOldHP();
 	}
 	
 	if (CurrentHP <= KINDA_SMALL_NUMBER)
@@ -87,6 +115,7 @@ void UFMStatComponent::SetCurrentHP(const float NewHP)
 	if (PrevHP != CurrentHP)
 	{
 		OnHPChangedDelegate.Broadcast(CurrentHP, MaxHP);
+		CalculateOldHP();
 	}
 	
 	if (CurrentHP <= KINDA_SMALL_NUMBER)
@@ -103,6 +132,7 @@ void UFMStatComponent::AddCurrentStamina(const float AddStamina)
 	if (PrevStamina != CurrentStamina)
 	{
 		OnStaminaChangedDelegate.Broadcast(CurrentStamina, MaxStamina);
+		OldStamina = CurrentStamina;
 	}
 }
 
@@ -114,6 +144,7 @@ void UFMStatComponent::SubCurrentStamina(const float SubStamina)
 	if (PrevStamina != CurrentStamina)
 	{
 		OnStaminaChangedDelegate.Broadcast(CurrentStamina, MaxStamina);
+		CalculateOldStamina();
 	}
 }
 
@@ -125,6 +156,7 @@ void UFMStatComponent::SetCurrentStamina(const float NewStamina)
 	if (PrevStamina != CurrentStamina)
 	{
 		OnStaminaChangedDelegate.Broadcast(CurrentStamina, MaxStamina);
+		CalculateOldStamina();
 	}
 }
 
@@ -154,11 +186,22 @@ void UFMStatComponent::InitPlayerStat(const FName& Name)
 
 	CurrentHP = MaxHP;
 	CurrentStamina = MaxStamina;
+
+	OldHP = CurrentHP;
+	SavedOldHP = OldHP;
+
+	OldStamina = CurrentStamina;
+	SavedOldStamina = OldStamina;
 }
 
 void UFMStatComponent::OnRep_CurrentHP()
 {
 	OnHPChangedDelegate.Broadcast(CurrentHP, MaxHP);
+	if (CurrentHP > OldHP)
+	{
+		OldHP = CurrentHP;
+	}
+	CalculateOldHP();
 }
 
 void UFMStatComponent::OnRep_MaxHP()
@@ -169,6 +212,11 @@ void UFMStatComponent::OnRep_MaxHP()
 void UFMStatComponent::OnRep_CurrentStamina()
 {
 	OnStaminaChangedDelegate.Broadcast(CurrentStamina, MaxStamina);
+	if (CurrentStamina > OldStamina)
+	{
+		OldStamina = CurrentStamina;
+	}
+	CalculateOldStamina();
 }
 
 void UFMStatComponent::OnRep_MaxStamina()
@@ -189,4 +237,44 @@ void UFMStatComponent::OnRep_BuffStat()
 void UFMStatComponent::StaminaRecovery()
 {
 	AddCurrentStamina(StaminaRecoveryAmount);
+}
+
+void UFMStatComponent::CalculateOldHP()
+{
+	SavedOldHP = OldHP;
+	
+	// HP Lerp
+	if (HPLerpTimelineComponent->IsPlaying())
+	{
+		HPLerpTimelineComponent->Stop();
+	}
+
+	HPLerpTimelineComponent->PlayFromStart();
+}
+
+void UFMStatComponent::OldHPLerp(float Value)
+{
+	OldHP = FMath::Lerp(SavedOldHP, CurrentHP, Value);
+
+	OnOldHPChangedDelegate.Broadcast(OldHP);
+}
+
+void UFMStatComponent::CalculateOldStamina()
+{
+	SavedOldStamina = OldStamina;
+	
+	// HP Lerp
+	if (StaminaLerpTimelineComponent->IsPlaying())
+	{
+		StaminaLerpTimelineComponent->Stop();
+	}
+
+	StaminaLerpTimelineComponent->PlayFromStart();
+}
+
+void UFMStatComponent::OldStaminaLerp(float Value)
+{
+	OldStamina = FMath::Lerp(SavedOldStamina, CurrentStamina, Value);
+
+	OnOldStaminaChangedDelegate.Broadcast(OldStamina);
 }

@@ -3,12 +3,10 @@
 
 #include "Skill/FMSkillComponent.h"
 
-#include "EngineUtils.h"
 #include "Engine/DamageEvents.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/GameStateBase.h"
 #include "Interface/FMCharacterSkillInterface.h"
-#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "Skill/FMSkillBase.h"
 
@@ -461,10 +459,11 @@ bool UFMSkillComponent::ServerSweepAttack_Validate(const TArray<FHitResult>& Hit
 		return true;
 	}
 	
-	// Get Current AnimSequence
+	// Get Current AnimMontage
 	UAnimInstance* AnimInstance = OwnerCharacter->GetMesh()->GetAnimInstance();
 	UAnimMontage* CurrentMontage = AnimInstance->GetCurrentActiveMontage();
-	
+
+	// Get AnimNotify Data
 	TArray<FAnimNotifyEvent> Notifies = CurrentMontage->Notifies;
 	float TimeDiff = AttackTime - AttackStartTime;
 	for (auto& Notify : Notifies)

@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Skill/FMSkillComponent.h"
-#include "FMAISkillComponent.generated.h"
+#include "Blueprint/UserWidget.h"
+#include "MyUserWidget.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class FULLMOON_API UFMAISkillComponent : public UFMSkillComponent
+class FULLMOON_API UMyUserWidget : public UUserWidget
 {
 	GENERATED_BODY()
 	

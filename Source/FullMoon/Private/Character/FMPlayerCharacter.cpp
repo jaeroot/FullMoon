@@ -6,6 +6,7 @@
 #include "EngineUtils.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "UI/FMHUDWidget.h"
 #include "Camera/CameraComponent.h"
 #include "Combat/FMCombatComponent.h"
 #include "GameData/FMGameSingleton.h"
@@ -44,6 +45,13 @@ AFMPlayerCharacter::AFMPlayerCharacter()
 
 	// Combat Component
 	CombatComponent = CreateDefaultSubobject<UFMCombatComponent>(TEXT("Combat"));
+
+	static ConstructorHelpers::FClassFinder<UFMHUDWidget>
+		FMHUDWidgetClassRef(TEXT("/Game/_FullMoon/UI/InGame/WBP_InGame.WBP_InGame_C"));
+	if (FMHUDWidgetClassRef.Succeeded())
+	{
+		FMHUDWidgetClass = FMHUDWidgetClassRef.Class;
+	}
 }
 
 void AFMPlayerCharacter::PostInitializeComponents()
@@ -81,9 +89,17 @@ void AFMPlayerCharacter::BeginPlay()
 			SubSystem->AddMappingContext(CombatInputData->CombatInputMappingContext, 0);
 		}
 
+		// Set Input Mode
 		PlayerController->SetShowMouseCursor(false);
 		FInputModeGameOnly InputModeGameOnly;
 		PlayerController->SetInputMode(InputModeGameOnly);
+
+		// Attach HUD
+		FMHUDWidget = CreateWidget<UFMHUDWidget>(PlayerController, FMHUDWidgetClass);
+		if (FMHUDWidget)
+		{
+			FMHUDWidget->AddToViewport();
+		}
 	}
 
 	// Set Animation End Delegate
@@ -490,5 +506,25 @@ void AFMPlayerCharacter::SweepAttack(FName FirstSocketName, FName SecondSocketNa
 	if (IsLocallyControlled())
 	{
 		CombatComponent->SweepAttack(FirstSocketName, SecondSocketName, Radius, FM_CCHANNEL_PLAYERATTACK, bIsStart, bIsEnd);
+	}
+}
+
+void AFMPlayerCharacter::SetupHUDWidget(class UFMHUDWidget* InHUDWidget)
+{
+	if (InHUDWidget)
+	{
+		InHUDWidget->UpdateHPBar(StatComponent->GetCurrentHP(), StatComponent->GetMaxHP());
+		InHUDWidget->UpdateOldHP(StatComponent->GetOldHP());
+		InHUDWidget->UpdateStaminaBar(StatComponent->GetCurrentStamina(), StatComponent->GetMaxStamina());
+		InHUDWidget->UpdateOldStamina(StatComponent->GetOldStamina());
+
+		StatComponent->OnHPChangedDelegate.AddUObject(InHUDWidget, &UFMHUDWidget::UpdateHPBar);
+		StatComponent->OnStaminaChangedDelegate.AddUObject(InHUDWidget, &UFMHUDWidget::UpdateStaminaBar);
+
+		if (IsLocallyControlled())
+		{
+			StatComponent->OnOldHPChangedDelegate.AddUObject(InHUDWidget, &UFMHUDWidget::UpdateOldHP);
+			StatComponent->OnOldStaminaChangedDelegate.AddUObject(InHUDWidget, &UFMHUDWidget::UpdateOldStamina);
+		}
 	}
 }
