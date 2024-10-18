@@ -268,14 +268,14 @@ void UFMSkillComponent::SweepAttack(const FVector& StartLocation, const FVector&
 			CurrentBoneName = OwnerCharacter->GetMesh()->GetParentBone(CurrentBoneName);
 		}
 		
-		SweepCollisionDetection(StartLocation, EndLocation, Radius, CollisionChannel);
+		SweepCollisionDetection(StartLocation, EndLocation, Radius, CollisionChannel, false);
 
 		return;
 	}
 
 	// Calculate SplitNum. If Distance < Radius and !bIsEnd, Don't perform collision detection.
 	float Distance = FVector::Distance(StartLocation, PrevLocation + (PrevDirection / 2));
-	int32 SplitNum = FMath::CeilToInt(Distance / (Radius * 2));
+	const int32 SplitNum = FMath::CeilToInt(Distance / (Radius * 2));
 	if (!bIsEnd && Distance < Radius)
 	{
 		return;
@@ -318,7 +318,8 @@ void UFMSkillComponent::SweepAttack(const FVector& StartLocation, const FVector&
 		FTransform NewEndLocation = SecondSocketLocalTransform * BoneTransform;
 		
 		// Do Interp
-		SweepCollisionDetection(NewStartLocation.GetLocation(), NewEndLocation.GetLocation(), Radius, CollisionChannel);
+		bool bIsInterp = (i != SplitNum);
+		SweepCollisionDetection(NewStartLocation.GetLocation(), NewEndLocation.GetLocation(), Radius, CollisionChannel, bIsInterp);
 	}
 
 	PrevMeshTransform = CurrentMeshTransform;
@@ -326,7 +327,7 @@ void UFMSkillComponent::SweepAttack(const FVector& StartLocation, const FVector&
 }
 
 void UFMSkillComponent::SweepCollisionDetection(const FVector& StartLocation, const FVector& EndLocation, float Radius,
-	ECollisionChannel CollisionChannel)
+	ECollisionChannel CollisionChannel, bool bIsInterp)
 {
 	const FVector CenterLocation = (StartLocation + EndLocation) / 2;
 	const FVector Direction = EndLocation - StartLocation;
@@ -367,10 +368,6 @@ void UFMSkillComponent::SweepCollisionDetection(const FVector& StartLocation, co
 				continue;
 			}
 
-			// float AttackDamage = 100.0f;
-			//
-			// HitResult.GetActor()->TakeDamage(AttackDamage, FDamageEvent(), OwnerCharacter->GetController(), OwnerCharacter);
-
 			/*UGameplayStatics::SpawnEmitterAtLocation(
 				GetWorld(),
 				Particle,
@@ -393,7 +390,8 @@ void UFMSkillComponent::SweepCollisionDetection(const FVector& StartLocation, co
 
 	// Draw Debug
 #if ENABLE_DRAW_DEBUG
-	FColor Color = bDrawDebug ? FColor::Green : FColor::Red;
+	FColor Color = bIsInterp ? FColor::Yellow : FColor::Red;
+	Color = bDrawDebug ? FColor::Green : Color;
 	DrawDebugCapsule(
 		GetWorld(),
 		CenterLocation,

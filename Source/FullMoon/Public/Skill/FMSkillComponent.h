@@ -176,7 +176,7 @@ protected:
 	TSet<TObjectPtr<AActor>> HitResultSet;
 	TArray<FFMBoneInfo> ParentBones;
 
-	void SweepCollisionDetection(const FVector& StartLocation, const FVector& EndLocation, float Radius, ECollisionChannel CollisionChannel);
+	void SweepCollisionDetection(const FVector& StartLocation, const FVector& EndLocation, float Radius, ECollisionChannel CollisionChannel, bool bIsInterp);
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerSweepAttack(const TArray<FHitResult>& HitResults, const float AttackTime);
