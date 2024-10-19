@@ -202,6 +202,11 @@ void UFMStatComponent::OnRep_CurrentHP()
 		OldHP = CurrentHP;
 	}
 	CalculateOldHP();
+	
+	if (CurrentHP <= KINDA_SMALL_NUMBER)
+	{
+		OnHPZeroDelegate.Broadcast();
+	}
 }
 
 void UFMStatComponent::OnRep_MaxHP()

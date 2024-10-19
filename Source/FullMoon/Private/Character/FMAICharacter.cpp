@@ -5,6 +5,7 @@
 
 #include "AI/FMAIController.h"
 #include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Physics/FMCollision.h"
 #include "Skill/FMSkillComponent.h"
 #include "Stat/FMStatComponent.h"
@@ -111,23 +112,27 @@ void AFMAICharacter::Attack()
 
 void AFMAICharacter::SetDead()
 {
-	AFMAIController* FMAIController = Cast<AFMAIController>(GetController());
-	if (IsValid(FMAIController))
+	if (HasAuthority())
 	{
-		FMAIController->StopAI();
+		AFMAIController* FMAIController = Cast<AFMAIController>(GetController());
+		if (IsValid(FMAIController))
+		{
+			FMAIController->StopAI();
+		}
+		
+		FTimerHandle DeadTimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(DeadTimerHandle, FTimerDelegate::CreateLambda([&]()
+			{
+				Destroy();
+			}
+		), 3.0f, false);
 	}
 
-	
+	GetCharacterMovement()->SetMovementMode(MOVE_None);
 	SetActorEnableCollision(false);
 	WidgetComponent->SetHiddenInGame(true);
+	// GetMesh()->GetAnimInstance()->StopAllMontages(0.0f);
 	// GetMesh()->GetAnimInstance()->Montage_Play(DeadMontage);
-
-	FTimerHandle DeadTimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(DeadTimerHandle, FTimerDelegate::CreateLambda([&]()
-		{
-			Destroy();
-		}
-	), 3.0f, false);
 }
 
 void AFMAICharacter::SetupWidget(class UFMUserWidget* InUserWidget)
