@@ -115,7 +115,15 @@ void UFMStatComponent::SetCurrentHP(const float NewHP)
 	if (PrevHP != CurrentHP)
 	{
 		OnHPChangedDelegate.Broadcast(CurrentHP, MaxHP);
-		CalculateOldHP();
+
+		if (PrevHP > CurrentHP)
+		{
+			CalculateOldHP();
+		}
+		else
+		{
+			OldHP = CurrentHP;
+		}
 	}
 	
 	if (CurrentHP <= KINDA_SMALL_NUMBER)
@@ -156,7 +164,14 @@ void UFMStatComponent::SetCurrentStamina(const float NewStamina)
 	if (PrevStamina != CurrentStamina)
 	{
 		OnStaminaChangedDelegate.Broadcast(CurrentStamina, MaxStamina);
-		CalculateOldStamina();
+		if (PrevStamina > CurrentStamina)
+		{
+			CalculateOldStamina();
+		}
+		else
+		{
+			OldStamina = CurrentStamina;
+		}
 	}
 }
 

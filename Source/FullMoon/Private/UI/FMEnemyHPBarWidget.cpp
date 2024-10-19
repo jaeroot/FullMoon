@@ -16,10 +16,10 @@ void UFMEnemyHPBarWidget::NativeConstruct()
 	
 }
 
-void UFMEnemyHPBarWidget::SetEnemyName(const FString& NewName)
+void UFMEnemyHPBarWidget::SetEnemyName(FName NewName)
 {
 	if (EnemyName)
 	{
-		EnemyName->SetText(FText::FromString(NewName));
+		EnemyName->SetText(FText::FromName(NewName));
 	}
 }

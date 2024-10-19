@@ -3,7 +3,9 @@
 
 #include "Character/FMAICharacter.h"
 
+#include "EngineUtils.h"
 #include "AI/FMAIController.h"
+#include "AI/FMAIDataAsset.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Physics/FMCollision.h"
@@ -47,9 +49,6 @@ AFMAICharacter::AFMAICharacter()
 	// Stat Component
 	StatComponent = CreateDefaultSubobject<UFMStatComponent>(TEXT("StatComponent"));
 
-	// Skill Component
-	SkillComponent = CreateDefaultSubobject<UFMSkillComponent>(TEXT("SkillComponent"));
-
 	// Widget
 	WidgetComponent = CreateDefaultSubobject<UFMWidgetComponent>(TEXT("WidgetComponent"));
 	WidgetComponent->SetupAttachment(GetMesh());
@@ -69,7 +68,46 @@ void AFMAICharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
+	check(AIDataAsset);
+
+	// Set Name
+	Name = AIDataAsset->AIName;
+
+	// Set Stat
 	StatComponent->OnHPZeroDelegate.AddUObject(this, &AFMAICharacter::SetDead);
+	StatComponent->SetPlayerStat(AIDataAsset->AIStat);
+	StatComponent->SetCurrentHP(StatComponent->GetMaxHP());
+	StatComponent->SetCurrentStamina(StatComponent->GetMaxStamina());
+
+	// Set Skill
+	SkillCount = AIDataAsset->AISkills.Num();
+	SkillCoolDown.Init(0.0f, SkillCount);
+	for (auto& Skill : AIDataAsset->AISkills)
+	{
+		int32 CurrentSkillPriority = Skill.SkillPriority;
+		SkillPriority.Add(CurrentSkillPriority);
+		TotalSkillPriority += CurrentSkillPriority;
+	}
+	
+}
+
+void AFMAICharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	// Calculate Skill CoolDown
+	for(int32 Index = 0; Index < SkillCount; Index++)
+	{
+		if (SkillCoolDown[Index] > 0.0f)
+		{
+			SkillCoolDown[Index] = FMath::Clamp(SkillCoolDown[Index] - DeltaSeconds, 0.0f, SkillCoolDown[Index]);
+
+			if (SkillCoolDown[Index] == 0.0f)
+			{
+				SetDefaultSkillPriority(Index);
+			}
+		}
+	}
 }
 
 float AFMAICharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
@@ -107,7 +145,80 @@ void AFMAICharacter::SetAIAttackDelegate(const FAIAttackFinished& InOnAttackFini
 
 void AFMAICharacter::Attack()
 {
-	
+	// Calculate Skill Priority
+	int PriorityIndex = FMath::RandRange(1, TotalSkillPriority);
+	int32 ActivateSkillIndex = 0;
+	for (int32 Index = 0; Index < SkillCount; Index++)
+	{
+		if (PriorityIndex <= SkillPriority[Index])
+		{
+			// Reduce Activate Skill's Priority
+			TotalSkillPriority -= SkillPriority[Index];
+			SkillPriority[Index] = 0;
+
+			// Check Skill CoolDown
+			SkillCoolDown[Index] = AIDataAsset->AISkills[Index].SkillData->SkillCoolTime;
+			if (SkillCoolDown[Index] == 0.0f)
+			{
+				SetDefaultSkillPriority(Index);
+			}
+
+			// Save Activate Skill Index
+			ActivateSkillIndex = Index;
+
+			break;
+		}
+	}
+
+	// Update Skill Priority
+	for (int32 Index = 0; Index <= SkillCount; Index++)
+	{
+		if (Index != ActivateSkillIndex && SkillCoolDown[Index] == 0.0f)
+		{
+			AddSkillPriorityWeight(Index);
+		}
+	}
+
+	// Activate Skill
+	ActivateSkill(ActivateSkillIndex);
+}
+
+void AFMAICharacter::SetDefaultSkillPriority(int32 Index)
+{
+	SkillPriority[Index] = AIDataAsset->AISkills[Index].SkillPriority;
+	TotalSkillPriority += SkillPriority[Index];
+}
+
+void AFMAICharacter::AddSkillPriorityWeight(int32 Index)
+{
+	int32 SkillPriorityWeight = AIDataAsset->AISkills[Index].SkillPriorityWeight;
+	SkillPriority[Index] = SkillPriorityWeight;
+	TotalSkillPriority += SkillPriorityWeight;
+}
+
+void AFMAICharacter::ActivateSkill(int32 SkillIndex)
+{
+	// Play Attack Montage
+	UAnimMontage* SkillMontage = AIDataAsset->AISkills[SkillIndex].SkillData->SkillMontage;
+	GetMesh()->GetAnimInstance()->Montage_Play(SkillMontage);
+
+	// Client RPC Activate Skill
+	for (const auto PlayerController : TActorRange<APlayerController>(GetWorld()))
+	{
+		if (!PlayerController->IsLocalController())
+		{					
+			ClientActivateSkill(SkillIndex);
+		}
+	}
+
+	// need additional features work in Server, perform here
+	AIDataAsset->AISkills[SkillIndex].SkillData->ActivateSkill();
+}
+
+void AFMAICharacter::ClientActivateSkill_Implementation(int32 SkillIndex)
+{
+	UAnimMontage* SkillMontage = AIDataAsset->AISkills[SkillIndex].SkillData->SkillMontage;
+	GetMesh()->GetAnimInstance()->Montage_Play(SkillMontage);
 }
 
 void AFMAICharacter::SetDead()

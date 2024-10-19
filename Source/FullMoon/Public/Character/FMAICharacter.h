@@ -8,6 +8,8 @@
 #include "Interface/FMWidgetInterface.h"
 #include "FMAICharacter.generated.h"
 
+class UFMSkillBase;
+class UFMAIDataAsset;
 class UFMWidgetComponent;
 class UFMSkillComponent;
 class UFMStatComponent;
@@ -23,11 +25,15 @@ public:
 	AFMAICharacter();
 
 	virtual void PostInitializeComponents() override;
+	virtual void Tick(float DeltaSeconds) override;
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
-	FString Name = FString("Monster");
+	FName Name = TEXT("Monster");
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	TObjectPtr<UFMAIDataAsset> AIDataAsset;
 
 // AI Interface
 protected:
@@ -41,17 +47,27 @@ protected:
 protected:
 	FAIAttackFinished OnAttackFinished;
 
+// Skill
+protected:
+	int32 SkillCount = 0;
+	int32 TotalSkillPriority = 0;
+	TArray<int32> SkillPriority;
+	TArray<float> SkillCoolDown;
+
+	void SetDefaultSkillPriority(int32 Index);
+	void AddSkillPriorityWeight(int32 Index);
+
+	void ActivateSkill(int32 SkillIndex);
+	
+	UFUNCTION(Client, Reliable)
+	void ClientActivateSkill(int32 SkillIndex);
+
 // Stat
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat")
 	TObjectPtr<UFMStatComponent> StatComponent;
 
 	void SetDead();
-
-// Skill
-protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Skill")
-	TObjectPtr<UFMSkillComponent> SkillComponent;
 
 // Widget
 protected:
