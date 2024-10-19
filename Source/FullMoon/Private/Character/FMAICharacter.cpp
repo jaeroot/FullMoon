@@ -7,6 +7,7 @@
 #include "AI/FMAIController.h"
 #include "AI/FMAIDataAsset.h"
 #include "Components/CapsuleComponent.h"
+#include "Engine/DamageEvents.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Physics/FMCollision.h"
 #include "Skill/FMSkillComponent.h"
@@ -27,24 +28,10 @@ AFMAICharacter::AFMAICharacter()
 	GetCapsuleComponent()->SetCapsuleRadius(35.0f);
 
 	// Set Mesh
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh>
-		SkeletalMeshRef(TEXT("/Game/Characters/Mannequin_UE4/Meshes/SK_Mannequin.SK_Mannequin"));
-	if (SkeletalMeshRef.Succeeded())
-	{
-		GetMesh()->SetSkeletalMeshAsset(SkeletalMeshRef.Object);
-	}
 	GetMesh()->SetRelativeLocation(FVector(0.0f, 0.0f, -95.0f));
 	GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->bReceivesDecals = false;
-
-	// Animation
-	// static ConstructorHelpers::FClassFinder<UAnimInstance>
-	// 	AnimClassRef(TEXT("/Script/Engine.AnimBlueprint'/Game/Goblin/ABP_Goblin.ABP_Goblin_C'"));
-	// if (AnimClassRef.Succeeded())
-	// {
-	// 	GetMesh()->SetAnimClass(AnimClassRef.Class);
-	// }
 
 	// Stat Component
 	StatComponent = CreateDefaultSubobject<UFMStatComponent>(TEXT("StatComponent"));
@@ -68,27 +55,40 @@ void AFMAICharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	check(AIDataAsset);
-
-	// Set Name
-	Name = AIDataAsset->AIName;
-
-	// Set Stat
-	StatComponent->OnHPZeroDelegate.AddUObject(this, &AFMAICharacter::SetDead);
-	StatComponent->SetPlayerStat(AIDataAsset->AIStat);
-	StatComponent->SetCurrentHP(StatComponent->GetMaxHP());
-	StatComponent->SetCurrentStamina(StatComponent->GetMaxStamina());
-
-	// Set Skill
-	SkillCount = AIDataAsset->AISkills.Num();
-	SkillCoolDown.Init(0.0f, SkillCount);
-	for (auto& Skill : AIDataAsset->AISkills)
+	if (IsValid(AIDataAsset))
 	{
-		int32 CurrentSkillPriority = Skill.SkillPriority;
-		SkillPriority.Add(CurrentSkillPriority);
-		TotalSkillPriority += CurrentSkillPriority;
+		// Set Name
+		Name = AIDataAsset->AIName;
+
+		// // Set Mesh
+		// GetMesh()->SetSkeletalMeshAsset(AIDataAsset->Mesh);
+		//
+		// // Set Animation
+		// GetMesh()->SetAnimClass(AIDataAsset->AnimClass);
+
+		// Set Stat
+		StatComponent->OnHPZeroDelegate.AddUObject(this, &AFMAICharacter::SetDead);
+		StatComponent->SetPlayerStat(AIDataAsset->AIStat);
+		StatComponent->SetCurrentHP(StatComponent->GetMaxHP());
+		StatComponent->SetOldHP(StatComponent->GetCurrentHP());
+		StatComponent->SetCurrentStamina(StatComponent->GetMaxStamina());
+		
+		MaxTraceDistance = AIDataAsset->MaxTraceDistance;
+		DetectDistance = AIDataAsset->DetectDistance;
+		TurnSpeed = AIDataAsset->TurnSpeed;
+		AttackRange = AIDataAsset->AttackRange;
+
+		// Set Skill
+		SkillCount = AIDataAsset->AISkills.Num();
+		SkillCoolDown.Init(0.0f, SkillCount);
+		for (auto& Skill : AIDataAsset->AISkills)
+		{
+			int32 CurrentSkillPriority = Skill.SkillPriority;
+			SkillPriority.Add(CurrentSkillPriority);
+			TotalSkillPriority += CurrentSkillPriority;
+		}
+
 	}
-	
 }
 
 void AFMAICharacter::Tick(float DeltaSeconds)
@@ -125,17 +125,17 @@ float AFMAICharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& 
 
 float AFMAICharacter::GetAIMaxTraceDistance()
 {
-	return 1000.0f;
+	return MaxTraceDistance;
 }
 
 float AFMAICharacter::GetAIDetectDistance()
 {
-	return 700.0f;
+	return DetectDistance;
 }
 
 float AFMAICharacter::GetAITurnSpeed()
 {
-	return 2.0f;
+	return TurnSpeed;
 }
 
 void AFMAICharacter::SetAIAttackDelegate(const FAIAttackFinished& InOnAttackFinished)
@@ -145,6 +145,13 @@ void AFMAICharacter::SetAIAttackDelegate(const FAIAttackFinished& InOnAttackFini
 
 void AFMAICharacter::Attack()
 {
+	if (SkillCount == 0)
+	{
+		OnAttackFinished.ExecuteIfBound();
+
+		return;
+	}
+	
 	// Calculate Skill Priority
 	int PriorityIndex = FMath::RandRange(1, TotalSkillPriority);
 	int32 ActivateSkillIndex = 0;
@@ -171,7 +178,7 @@ void AFMAICharacter::Attack()
 	}
 
 	// Update Skill Priority
-	for (int32 Index = 0; Index <= SkillCount; Index++)
+	for (int32 Index = 0; Index < SkillCount; Index++)
 	{
 		if (Index != ActivateSkillIndex && SkillCoolDown[Index] == 0.0f)
 		{
@@ -192,33 +199,83 @@ void AFMAICharacter::SetDefaultSkillPriority(int32 Index)
 void AFMAICharacter::AddSkillPriorityWeight(int32 Index)
 {
 	int32 SkillPriorityWeight = AIDataAsset->AISkills[Index].SkillPriorityWeight;
-	SkillPriority[Index] = SkillPriorityWeight;
+	SkillPriority[Index] += SkillPriorityWeight;
 	TotalSkillPriority += SkillPriorityWeight;
 }
 
 void AFMAICharacter::ActivateSkill(int32 SkillIndex)
 {
-	// Play Attack Montage
-	UAnimMontage* SkillMontage = AIDataAsset->AISkills[SkillIndex].SkillData->SkillMontage;
-	GetMesh()->GetAnimInstance()->Montage_Play(SkillMontage);
-
-	// Client RPC Activate Skill
-	for (const auto PlayerController : TActorRange<APlayerController>(GetWorld()))
-	{
-		if (!PlayerController->IsLocalController())
-		{					
-			ClientActivateSkill(SkillIndex);
-		}
-	}
+	MulticastActivateSkill(SkillIndex);
 
 	// need additional features work in Server, perform here
 	AIDataAsset->AISkills[SkillIndex].SkillData->ActivateSkill();
 }
 
-void AFMAICharacter::ClientActivateSkill_Implementation(int32 SkillIndex)
+void AFMAICharacter::MulticastActivateSkill_Implementation(int32 SkillIndex)
 {
+	// Play Attack Montage
 	UAnimMontage* SkillMontage = AIDataAsset->AISkills[SkillIndex].SkillData->SkillMontage;
 	GetMesh()->GetAnimInstance()->Montage_Play(SkillMontage);
+}
+
+void AFMAICharacter::AttackEnd()
+{
+	if (HasAuthority())
+	{
+		OnAttackFinished.ExecuteIfBound();
+	}
+}
+
+void AFMAICharacter::MeleeAttack()
+{
+	if (HasAuthority())
+	{
+		TArray<FHitResult> HitResults;
+		FVector StartLocation = GetActorLocation() + GetActorForwardVector() * GetCapsuleComponent()->GetScaledCapsuleRadius();
+		FVector EndLocation = StartLocation + GetActorForwardVector() * AttackRange;
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(Attack), false, this);
+
+		bool bResult = GetWorld()->SweepMultiByChannel(
+			HitResults,
+			StartLocation,
+			EndLocation,
+			FQuat::Identity,
+			FM_CCHANNEL_ENEMYATTACK,
+			FCollisionShape::MakeSphere(30.0f),
+			Params
+		);
+
+		if (bResult)
+		{
+			FDamageEvent DamageEvent;
+			for (auto HitResult : HitResults)
+			{
+				HitResult.GetActor()->TakeDamage(StatComponent->GetTotalStat().AttackDamage, DamageEvent, GetController(), this);
+			
+				// UGameplayStatics::SpawnEmitterAtLocation(
+				// 	GetWorld(),
+				// 	MeleeParticle,
+				// 	HitResult.ImpactPoint);
+			}
+		}
+
+		#if ENABLE_DRAW_DEBUG
+			FVector CapsuleOrigin = StartLocation + (EndLocation - StartLocation) * 0.5f;
+			float CapsuleHalfHeight = AttackRange / 2;
+			FColor DrawColor = bResult ? FColor::Green : FColor::Red;
+		
+			DrawDebugCapsule(GetWorld(), CapsuleOrigin, CapsuleHalfHeight, 30.0f, FRotationMatrix::MakeFromZ(GetActorForwardVector()).ToQuat(), DrawColor, false, 5.0f);
+		
+		#endif
+	}
+}
+
+void AFMAICharacter::MagicAttack()
+{
+	if (HasAuthority())
+	{
+		
+	}
 }
 
 void AFMAICharacter::SetDead()
@@ -236,14 +293,14 @@ void AFMAICharacter::SetDead()
 			{
 				Destroy();
 			}
-		), 3.0f, false);
+		), 5.0f, false);
 	}
 
 	GetCharacterMovement()->SetMovementMode(MOVE_None);
 	SetActorEnableCollision(false);
 	WidgetComponent->SetHiddenInGame(true);
-	// GetMesh()->GetAnimInstance()->StopAllMontages(0.0f);
-	// GetMesh()->GetAnimInstance()->Montage_Play(DeadMontage);
+	GetMesh()->GetAnimInstance()->StopAllMontages(0.5f);
+	GetMesh()->GetAnimInstance()->Montage_Play(AIDataAsset->DeadMontage);
 }
 
 void AFMAICharacter::SetupWidget(class UFMUserWidget* InUserWidget)

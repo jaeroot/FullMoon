@@ -389,6 +389,15 @@ void AFMPlayerCharacter::TakeWeapon(AFMWeapon* Weapon)
 
 void AFMPlayerCharacter::SetDead()
 {
+	GetCharacterMovement()->SetMovementMode(MOVE_None);
+	SetActorEnableCollision(false);
+	AnimInstance->StopAllMontages(0.0f);
+	
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	if (PlayerController)
+	{
+		DisableInput(PlayerController);
+	}
 }
 
 bool AFMPlayerCharacter::CanActivateSkill(const float SkillCost)

@@ -115,9 +115,12 @@ protected:
 public:
 	void CalculateOldHP();
 	FORCEINLINE float GetOldHP() const { return OldHP; }
+	void SetOldHP(float NewHP) { OldHP = NewHP; SavedOldHP = OldHP; }
 
 protected:
+	UPROPERTY(VisibleAnywhere)
 	float OldHP = 100.0f;
+	UPROPERTY(VisibleAnywhere)
 	float SavedOldHP = 100.0f;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "HP")

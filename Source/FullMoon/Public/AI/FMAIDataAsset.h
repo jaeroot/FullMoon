@@ -41,13 +41,13 @@ public:
 	UFMAIDataAsset();
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AICharacter")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AIData")
 	FName AIName;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AICharacter")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
 	TObjectPtr<USkeletalMesh> Mesh;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AICharacter")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation")
 	TSubclassOf<UAnimInstance> AnimClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AIData")
@@ -55,5 +55,21 @@ public:
 
 	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category = "Skill")
 	TArray<FAISkillData> AISkills;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation")
+	TObjectPtr<UAnimMontage> DeadMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stat")
+	float MaxTraceDistance;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stat")
+	float DetectDistance;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stat")
+	float TurnSpeed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stat")
+	float AttackRange;
+	
 	
 };

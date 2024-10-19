@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Interface/FMAIAnimNotifyInterface.h"
 #include "Interface/FMAIInterface.h"
 #include "Interface/FMWidgetInterface.h"
 #include "FMAICharacter.generated.h"
@@ -17,7 +18,8 @@ class UFMStatComponent;
 UCLASS()
 class FULLMOON_API AFMAICharacter : public ACharacter,
 	public IFMAIInterface,
-	public IFMWidgetInterface
+	public IFMWidgetInterface,
+	public IFMAIAnimNotifyInterface
 {
 	GENERATED_BODY()
 
@@ -34,6 +36,11 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
 	TObjectPtr<UFMAIDataAsset> AIDataAsset;
+
+	float MaxTraceDistance = 0.0f;
+	float DetectDistance = 0.0f;
+	float TurnSpeed = 0.0f;
+	float AttackRange = 150.0f;
 
 // AI Interface
 protected:
@@ -57,17 +64,21 @@ protected:
 	void SetDefaultSkillPriority(int32 Index);
 	void AddSkillPriorityWeight(int32 Index);
 
-	void ActivateSkill(int32 SkillIndex);
+	virtual void ActivateSkill(int32 SkillIndex);
 	
-	UFUNCTION(Client, Reliable)
-	void ClientActivateSkill(int32 SkillIndex);
+	UFUNCTION(NetMulticast, Reliable)
+	virtual void MulticastActivateSkill(int32 SkillIndex);
+
+	virtual void AttackEnd() override;
+	virtual void MeleeAttack() override;
+	virtual void MagicAttack() override;
 
 // Stat
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat")
 	TObjectPtr<UFMStatComponent> StatComponent;
 
-	void SetDead();
+	virtual void SetDead();
 
 // Widget
 protected:
