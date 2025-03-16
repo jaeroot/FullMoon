@@ -284,10 +284,10 @@ void UFMSkillComponent::SweepAttack(const FVector& StartLocation, const FVector&
 	FTransform CurrentMeshTransform = OwnerCharacter->GetMesh()->GetBoneTransform(RootBone);
 	
 	// Split between PrevLocation and CurrentLocation
-	for (int32 i = 1; i <= SplitNum; i++)
+	for (int32 index = 1; index <= SplitNum; index++)
 	{
 		// Init Duration Time, Leaf Bone Name
-		float DurationTime = PrevTime + Duration * i / SplitNum;
+		float DurationTime = PrevTime + Duration * index / SplitNum;
 
 		// Calculate Bone Local Transform from RootBone
 		FTransform BoneTransform = FTransform::Identity;
@@ -306,9 +306,9 @@ void UFMSkillComponent::SweepAttack(const FVector& StartLocation, const FVector&
 		
 		// Interp Mesh Transform
 		FTransform InterpMeshTransform;
-		InterpMeshTransform.SetLocation(FMath::Lerp(PrevMeshTransform.GetLocation(), CurrentMeshTransform.GetLocation(), static_cast<float>(i) / 10));
-		InterpMeshTransform.SetRotation(FQuat::Slerp(PrevMeshTransform.GetRotation(), CurrentMeshTransform.GetRotation(), static_cast<float>(i) / 10));
-		InterpMeshTransform.SetScale3D(FMath::Lerp(PrevMeshTransform.GetScale3D(), CurrentMeshTransform.GetScale3D(), static_cast<float>(i) / 10));
+		InterpMeshTransform.SetLocation(FMath::Lerp(PrevMeshTransform.GetLocation(), CurrentMeshTransform.GetLocation(), static_cast<float>(index) / 10));
+		InterpMeshTransform.SetRotation(FQuat::Slerp(PrevMeshTransform.GetRotation(), CurrentMeshTransform.GetRotation(), static_cast<float>(index) / 10));
+		InterpMeshTransform.SetScale3D(FMath::Lerp(PrevMeshTransform.GetScale3D(), CurrentMeshTransform.GetScale3D(), static_cast<float>(index) / 10));
 		BoneTransform = BoneTransform * InterpMeshTransform;
 
 		// Weapon Mesh Socket Transform
@@ -316,7 +316,7 @@ void UFMSkillComponent::SweepAttack(const FVector& StartLocation, const FVector&
 		FTransform NewEndLocation = SecondSocketLocalTransform * BoneTransform;
 		
 		// Do Interp
-		bool bIsInterp = (i != SplitNum);
+		bool bIsInterp = (index != SplitNum);
 		SweepCollisionDetection(NewStartLocation.GetLocation(), NewEndLocation.GetLocation(), Radius, CollisionChannel, bIsInterp);
 	}
 

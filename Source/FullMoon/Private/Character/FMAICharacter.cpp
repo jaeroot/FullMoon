@@ -3,9 +3,11 @@
 
 #include "Character/FMAICharacter.h"
 
+#include "BrainComponent.h"
 #include "EngineUtils.h"
 #include "AI/FMAIController.h"
 #include "AI/FMAIDataAsset.h"
+#include "BehaviorTree/BlackboardComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/DamageEvents.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -188,6 +190,52 @@ void AFMAICharacter::Attack()
 
 	// Activate Skill
 	ActivateSkill(ActivateSkillIndex);
+}
+
+void AFMAICharacter::AIDebugActivateSkill(UFMSkillBase* SkillData)
+{
+	int32 SkillIndex;
+	for (SkillIndex = 0; SkillIndex < AIDataAsset->AISkills.Num(); SkillIndex++)
+	{
+		if (AIDataAsset->AISkills[SkillIndex].SkillData == SkillData)
+		{
+			break;
+		}
+	}
+
+	if (SkillIndex < AIDataAsset->AISkills.Num())
+	{
+		ActivateSkill(SkillIndex);
+	}
+}
+
+void AFMAICharacter::RunBehaviorTree() const
+{
+	AFMAIController* FMAIController = Cast<AFMAIController>(GetController());
+	if (IsValid(FMAIController))
+	{
+		FMAIController->RunAI();
+	}
+}
+
+void AFMAICharacter::StopBehaviorTree() const
+{
+	AFMAIController* FMAIController = Cast<AFMAIController>(GetController());
+	if (IsValid(FMAIController))
+	{
+		FMAIController->StopAI();
+	}
+}
+
+bool AFMAICharacter::IsBehaviorTreeRunning() const
+{
+	AFMAIController* FMAIController = Cast<AFMAIController>(GetController());
+	if (IsValid(FMAIController))
+	{
+		return FMAIController->GetBrainComponent()->IsRunning();
+	}
+
+	return false;
 }
 
 void AFMAICharacter::SetDefaultSkillPriority(int32 Index)

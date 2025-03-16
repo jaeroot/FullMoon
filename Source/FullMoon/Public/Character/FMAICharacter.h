@@ -30,6 +30,9 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
+public:
+	FORCEINLINE UFMAIDataAsset* GetAIData() const { return AIDataAsset; }
+	
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
 	FName Name = TEXT("Monster");
@@ -54,6 +57,13 @@ protected:
 protected:
 	FAIAttackFinished OnAttackFinished;
 
+// AI Debug
+public:
+	void AIDebugActivateSkill(UFMSkillBase* SkillData);
+	void RunBehaviorTree() const;
+	void StopBehaviorTree() const;
+	bool IsBehaviorTreeRunning() const;
+	
 // Skill
 protected:
 	int32 SkillCount = 0;
